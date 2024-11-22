@@ -1,0 +1,1563 @@
+---
+title: "Brazil"
+format: html
+editor: visual
+---
+
+Opening the Library and setting the directory.
+
+```{r}
+
+library(tidyverse)
+library(readxl)
+
+#set the working directory in (your) project folder
+setwd("C://Users//juanp//OneDrive//Área de Trabalho//UNIBO - Notes//Big Data in Social Sciences//Lab//Assignment")
+
+
+
+knitr::opts_knit$set(root.dir = "C:/Users/juanp/OneDrive/Área de Trabalho/UNIBO - Notes/Big Data in Social Sciences/Lab/Assignment")
+
+```
+
+Fetching municipalities HDI data set (1991, 2000, and 2010)
+
+OBS: I could not find more than that. Not that there's not more, but I could not find.
+
+```{r}
+
+#read the file
+HDI_1991 <- read_excel("HDI_municipalities_1991.xlsx")
+HDI_2000 <- read_excel("HDI_municipalities_2000.xlsx")
+HDI_2010 <- read_excel("HDI_municipalities_2010.xlsx")
+ 
+
+#Excluding the collumns that are less important in all files, just focusing on HDI
+IDHM_1991 <- HDI_1991 %>%
+  select(-`Posição IDHM`, -`Posição IDHM Renda`, -`IDHM Renda`, -`Posição IDHM Educação`, -`IDHM Educação`, -`Posição IDHM Longevidade`, -`IDHM Longevidade`)
+
+IDHM_2000 <- HDI_2000 %>%
+  select(-`Posição IDHM`, -`Posição IDHM Renda`, -`IDHM Renda`, -`Posição IDHM Educação`, -`IDHM Educação`, -`Posição IDHM Longevidade`, -`IDHM Longevidade`)
+
+IDHM_2010 <- HDI_2010 %>%
+  select(-`Posição IDHM`, -`Posição IDHM Renda`, -`IDHM Renda`, -`Posição IDHM Educação`, -`IDHM Educação`, -`Posição IDHM Longevidade`, -`IDHM Longevidade`)
+
+#combining all the dates together
+
+HDI_combined <- inner_join(IDHM_1991, IDHM_2000, by = "Territorialidade")
+
+HDI_combined <- inner_join(HDI_combined, IDHM_2010, by = "Territorialidade")
+
+#just renaming columns for clarity
+
+HDI_all <- HDI_combined |>
+  rename(
+    HDI_1991_m = IDHM.x,
+    HDI_2000_m = IDHM.y,
+    HDI_2010_m = IDHM
+  )
+
+View(HDI_all)
+
+
+#pay attention, there seems to be data from 2012 up to 2021 -> https://app.powerbi.com/view?r=eyJrIjoiODNmZjdhNzgtMTFmOC00Y2Y0LTk3N2EtYWE5YjI2MTIxYWJlIiwidCI6ImIzZTVkYjVlLTI5NDQtNDgzNy05OWY1LTc0ODhhY2U1NDMxOSIsImMiOjh9
+
+#now, let's transform it into graph
+
+#HDI_columns <- HDI_all %>%
+#  cols = c(HDI_1991_m, HDI_2000_m, HDI_2010_m),
+#    names_to = "Year",
+#    values_to = "HDI_Value"
+#  )
+
+#ggplot(HDI_long, aes(x = Year, y = HDI_Value, group = Year, color = Year)) +
+#  geom_line() +
+#  labs(
+#    title = "HDI Trends Over the Years",
+#    x = "Year",
+#    y = "HDI Value"
+#  ) +
+#  theme_minimal()
+
+### OBS:
+#Municipalities -> the idea would be to use either GDP_Capita_m or GPD_m or both. In order to check which reagions experienced the greater increase (e.g. 50%). It comes from the assumption that agriculture and industry came to that city and developed it.
+#Capital -> can use as measures because it's easier to identify if there was a great change in economic activity. Besides that, this would allow graphical representation.
+#Regions -> I do not think it's very useful because it's too macro to generate an inference.
+
+```
+
+GDP of the municipalities (1999_to_2012)
+
+```{r}
+
+GDP_m_1999_to_2012 <- read_excel("GDP_ municipalities_1999-2012.xlsx")
+
+# Remove the first two rows
+GDP_m_1999_to_2012 <- GDP_m_1999_to_2012[-c(1, 2), ]
+
+# Set the third row as the header
+colnames(GDP_m_1999_to_2012) <- GDP_m_1999_to_2012[1, ]
+GDP_m_1999_to_2012 <- GDP_m_1999_to_2012[-1, ]
+
+# Convert to a tibble with name repair to handle empty or duplicate names
+GDP_m_1999_to_2012 <- as_tibble(GDP_m_1999_to_2012, .name_repair = "unique")
+
+
+#To change the name of the first column
+GDP_m_1999_to_2012 <- GDP_m_1999_to_2012 %>%
+  rename(Municipalities = 1)
+
+View(GDP_m_1999_to_2012)
+#Ok, now it's organized properly
+
+```
+
+Maybe we can use a filtering to check which municipalities increased the most. It can be assumed that something happened to those cities become reach: raise of industry, agriculture, and discovery of natural resources for extraction\...
+
+```{r}
+#the idea is to filter the municipalities that most increased GDP. Those are assume to have introduced a specific economic activity (e.g. agricultrue or industry)
+
+GDP_m_1999_to_2012 <- GDP_m_1999_to_2012 %>%
+  mutate(across(`1999`:`2012`, as.numeric)) #sets all the periods
+
+# calculate the percent change from 1999 to 2012
+gdp_filtered <- GDP_m_1999_to_2012 %>%
+  mutate(
+    percent_change = ((`2012` - `1999`) / `1999`) * 100
+  ) %>%
+  filter(percent_change >= 1000)  # for changing city increase just change the value.
+
+# the problem will be to define a specific value of increase considered acceptable
+
+View(gdp_filtered)
+
+#Ceratinly the capitals will increase much less, but we still can try to observe how and why those increased the most
+
+
+
+```
+
+GDP per Capita in order to avoid bias from other factors to the increase in GDP (e.g. increase in pop).
+
+```{r}
+### Now I have to figure out what to do exaclty. I manage to find the GDP of each city from 2013 up to 2021. If needed I will have to find a way to join everything in the excel file from 1999 to 2012.
+#Actually, checking those were not the full files fo all municipalities but specific classification. The 2013 had all, but it was GDP per capita.
+
+
+
+
+
+```
+
+GDP by States from 2002 to 2021
+
+```{r}
+
+GDP_States <- read.csv("GDP_States_2002-2021.csv", header = FALSE)[4:32, 1:21]
+
+colnames(GDP_States) <- GDP_States[1, ]
+
+#remove the first row
+GDP_States <- GDP_States[-1, ]
+
+#View(GDP_States)
+
+GDP_States <- GDP_States %>%
+  rename(Region = `Brasil e Unidade da Federação`)
+
+
+# from wide to long
+GDP_States_long <- GDP_States %>%
+  pivot_longer(cols = -`Region`,  # All columns except the first
+               names_to = "Year",                         # New column name for years
+               values_to = "GDP")                         # New column name for GDP values
+
+# Check the structure of the reshaped data
+str(GDP_States_long)
+
+View(GDP_States)
+
+```
+
+HDI by States from 1990 to 2022
+
+```{r}
+
+#HDI_States <- read_excel("HDI_States.xlsx")
+
+#HDI_S_1991 <- read_excel("HDI_S_1991.xlsx")
+#HDI_S_2000 <- read_excel("HDI_S_2000.xlsx")
+#HDI_S_2010 <- read_excel("HDI_S_2010.xlsx")
+#HDI_S_2016 <- read_excel("HDI_S_2016.xlsx")
+#HDI_S_2017 <- read_excel("HDI_S_2017.xlsx")
+#HDI_S_2018 <- read_excel("HDI_S_2018.xlsx")
+#HDI_S_2019 <- read_excel("HDI_S_2019.xlsx")
+#HDI_S_2020 <- read_excel("HDI_S_2020.xlsx")
+#HDI_S_2021 <- read_excel("HDI_S_2021.xlsx")
+
+HDI_data_S <- read.csv("HDI_data_States.csv", header = FALSE)[1:57, 6:39]
+
+HDI_data_S <- HDI_data_S[-c(30:57), ]
+
+#header
+colnames(HDI_data_S) <- HDI_data_S[1, ]
+
+#remove the first row
+HDI_data_S <- HDI_data_S[-1, ]
+
+
+#View(HDI_data_S)
+
+str(HDI_data_S)
+head(HDI_data_S)
+
+HDI_data_long_S <- HDI_data_S %>%
+  pivot_longer(
+    cols = -Region,  # All columns except the "Regions" column
+    names_to = "Year",  # New column name for years
+    values_to = "HDI"   # New column name for HDI values
+  )
+
+str(HDI_data_long_S)
+head(HDI_data_long_S)
+
+HDI_data_long_S$Year <- as.numeric(HDI_data_long_S$Year)
+HDI_data_long_S$HDI <- as.numeric(HDI_data_long_S$HDI)
+
+summary(HDI_data_long_S)
+
+```
+
+Trying to compute graphs with Brazilian states using GDP.
+
+```{r}
+
+install.packages('ggthemes')
+install.packages('RColorBrewer')
+
+library('RColorBrewer') # various qualitative color palettes
+library('ggthemes') # various themes in ggplot
+
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+library(scales)
+library(ggplot2)
+library(dplyr)
+library(RColorBrewer)
+
+# Function to generate a plot after filtering specific regions
+generate_plot <- function(data, excluded_regions, title, color_count) {
+  filtered_data <- data %>%
+    filter(!(`Region` %in% excluded_regions)) %>%
+    group_by(`Region`) %>%
+    summarise(total_GDP = sum(as.numeric(GDP), na.rm = TRUE)) %>%
+    arrange(desc(total_GDP)) %>%
+    left_join(data, by = "Region")
+  
+  filtered_data$`Region` <- factor(
+    filtered_data$`Region`,
+    levels = unique(filtered_data$`Region`)
+  )
+  
+  ggplot(data = filtered_data,
+         mapping = aes(x = as.numeric(Year), y = as.numeric(GDP), color = `Region`)) +
+    geom_line() +
+    geom_point() +
+    theme_clean() +
+    scale_color_manual(name = "Region", values = colorRampPalette(brewer.pal(8, "Set1"))(color_count)) +
+    scale_y_continuous(labels = label_comma(scale = 1)) +
+    xlab('Year') +
+    ylab('GDP') +
+    ggtitle(title) +
+    theme(legend.position = "right")
+}
+
+# Dataset preparation (convert GDP to numeric once for all plots)
+GDP_States_long_filtered <- GDP_States_long
+GDP_States_long_filtered$GDP <- as.numeric(GDP_States_long_filtered$GDP)
+
+# Plot 1: Excluding only "Brasil"
+plot1 <- generate_plot(
+  data = GDP_States_long_filtered,
+  excluded_regions = c("Brasil"),
+  title = "GDP of Brazilian States from 2002 to 2021",
+  color_count = 27
+)
+
+# Plot 2: Excluding "Brasil" and "São Paulo"
+plot2 <- generate_plot(
+  data = GDP_States_long_filtered,
+  excluded_regions = c("Brasil", "São Paulo"),
+  title = "GDP of Brazilian States (Excluding São Paulo) from 2002 to 2021",
+  color_count = 26
+)
+
+# Plot 3: Excluding "Brasil," "São Paulo," "Rio de Janeiro," and "Minas Gerais"
+plot3 <- generate_plot(
+  data = GDP_States_long_filtered,
+  excluded_regions = c("Brasil", "São Paulo", "Rio de Janeiro", "Minas Gerais"),
+  title = "GDP of Brazilian States (Excluding SP, RJ, MG) from 2002 to 2021",
+  color_count = 24
+)
+
+# Plot 4: Excluding "Brasil," "São Paulo," "Rio de Janeiro," "Minas Gerais," "Rio Grande do Sul," and "Paraná"
+plot4 <- generate_plot(
+  data = GDP_States_long_filtered,
+  excluded_regions = c("Brasil", "São Paulo", "Rio de Janeiro", "Minas Gerais", "Rio Grande do Sul", "Paraná"),
+  title = "GDP of Brazilian States (Excluding SP, RJ, MG, RS, PR) from 2002 to 2021",
+  color_count = 22
+)
+
+# Print the plots
+print(plot1)
+print(plot2)
+print(plot3)
+print(plot4)
+
+
+```
+
+```{r}
+```
+
+Plotting Graphs with the HDI of the Brazilian States.
+
+```{r}
+
+
+#print(plot_HDI_states)
+
+# Load required package for color generation
+library(RColorBrewer)
+
+# Generate a custom color palette with enough colors for all states
+num_states <- length(unique(HDI_data_long_S$Region))
+colors <- colorRampPalette(brewer.pal(9, "Set1"))(num_states)
+
+# Create the plot with custom colors and reordered data
+plot_HDI_states <- ggplot(data = HDI_data_long_S, 
+                          mapping = aes(x = Year, y = HDI, color = reorder(Region, -max_HDI))) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  scale_color_manual(name = "Region", values = colors) +  # Use custom colors
+  xlab('Year') +
+  ylab('Human Development Index (HDI)') +
+  ggtitle('HDI of Brazilian States from 1990 to 2022') +
+  scale_y_continuous(breaks = seq(0.4, 1.0, by = 0.05),
+                     labels = scales::label_number(accuracy = 0.01))
+
+# Print the plot to display it
+print(plot_HDI_states)
+```
+
+```{r}
+library(RColorBrewer)
+
+# Generate a custom color palette with enough colors for all states
+num_states <- length(unique(HDI_data_long_S$Region))
+colors <- colorRampPalette(brewer.pal(9, "Set1"))(num_states)
+
+# Create the plot without the max_HDI variable
+plot_HDI_states <- ggplot(data = HDI_data_long_S,
+                          mapping = aes(x = Year, y = HDI, color = Region)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  scale_color_manual(name = "Region", values = colors) +  # Use custom colors
+  xlab('Year') +
+  ylab('Human Development Index (HDI)') +
+  ggtitle('HDI of Brazilian States from 1990 to 2022') +
+  scale_y_continuous(breaks = seq(0.4, 1.0, by = 0.05),
+                     labels = scales::label_number(accuracy = 0.01))
+
+# Print the plot to display it
+print(plot_HDI_states)
+```
+
+Attempt with tridimensional data with both GDP and HDI of States. It shows a HDI and
+
+```{r}
+
+#install.packages("plotly")
+
+# Load necessary libraries
+library(plotly)
+library(dplyr)
+
+
+#GDP_States <- GDP_States %>%
+  #rename(Region = `Brasil e Unidade da Federação`)
+
+#library(dplyr)
+#library(tidyr)
+
+# Merge HDI and GDP datasets by Region and Year
+data_combined <- merge(HDI_data_long_S, GDP_States_long, 
+                       by = c("Region", "Year"))
+
+# Check the structure of the combined data
+#head(data_combined)
+
+#install.packages("plotly")
+
+#library(plotly)
+
+# Create a 3D plot for GDP and HDI by Region and Year
+plot_ly(data = data_combined, 
+        x = ~Year,           # x-axis for Year
+        y = ~HDI,            # y-axis for HDI
+        z = ~GDP,            # z-axis for GDP
+        color = ~Region,     # Color points by Region
+        type = "scatter3d",  # Specify 3D scatter plot
+        mode = "markers") %>% 
+  layout(title = '3D Plot of GDP and HDI for Brazilian Regions (2002-2021)',
+         scene = list(
+           xaxis = list(title = 'Year'),
+           yaxis = list(title = 'HDI'),
+           zaxis = list(title = 'GDP')
+         ))
+```
+
+Correlation between GDP and HDI. As it show correlation is positive, even more correlated during the previous years. Therefore, HDI can be partially used to substitute years in which GDP is not present.
+
+```{r}
+
+# Ensure HDI and GDP are numeric
+data_combined$HDI <- as.numeric(data_combined$HDI)
+data_combined$GDP <- as.numeric(data_combined$GDP)
+
+# Compute correlation between HDI and GDP for each year
+correlation_results <- data_combined %>%
+  group_by(Year) %>%
+  summarise(correlation = cor(HDI, GDP, use = "complete.obs"))
+
+# View the correlation results
+print(correlation_results)
+
+
+
+
+# Plot the correlation over time
+library(ggplot2)
+
+ggplot(correlation_results, aes(x = Year, y = correlation)) +
+  geom_line() +
+  geom_point() +
+  ggtitle("Correlation Between HDI and GDP Over Time") +
+  xlab("Year") +
+  ylab("Correlation (HDI vs GDP)")
+
+
+```
+
+Try to work with data on industrialization and agriculture. Now I can try to make it run showing the cities which were found to have more industrialization and more agriculture. The concern will be establishing a time frame, problably would be good something from 2002 up to 2010; then, another comparison from 2011 up to 2021.
+
+```{r}
+
+GDP_M_complete1 <- read_excel("C:/Users/juanp/OneDrive/Área de Trabalho/UNIBO - Notes/Big Data in Social Sciences/Lab/Assignment/PIB_dos_Municípios_base_de_dados_2002_2009.xls")
+
+GDP_M_complete2 <- read_excel("C:/Users/juanp/OneDrive/Área de Trabalho/UNIBO - Notes/Big Data in Social Sciences/Lab/Assignment/PIB_dos_Municípios_base_de_dados_2010_2021.xlsx")
+
+#GDP_M_complete <- bind_rows(GDP_M_complete1, GDP_M_complete2)
+
+#View(GDP_M_complete)
+
+GDP_M_complete1 <- GDP_M_complete1[ , -c(2:4, 6:7 ,9:24, 26:32, 35:38)]
+
+GDP_Agri1 <- GDP_M_complete1[ , -c(4, 6:8)]
+
+GDP_Indus1 <- GDP_M_complete1[ , -c(4:5, 7:8)]
+
+View(GDP_M_complete1)
+
+
+#GDP_M_complete2 <- GDP_M_complete2[ , -c(2:4, 9:24, 26:32, 35:38)]
+
+GDP_Agri2 <- GDP_M_complete2[ , -c(4, 5:10)]
+
+GDP_Indus2 <- GDP_M_complete2[ , -c(4, 6:10)]
+
+View(GDP_M_complete2)
+
+```
+
+```{r}
+#install.packages("readxl")
+
+library(readxl)
+
+ # Path to your Excel file
+
+gdp_vari_2002 <- "C:/Users/juanp/OneDrive/Área de Trabalho/UNIBO - Notes/Big Data in Social Sciences/Lab/Assignment/PIB_dos_Municípios_base_de_dados_2002_2009.xls"
+ 
+ # Read the specific columns
+ 
+data_1 <- read_excel(gdp_vari_2002, col_names = TRUE)[, c(1, 5, 7, 8, 33, 34, 39,
+ 40)]
+ 
+ # Path to your Excel file
+ 
+gdp_vari_2010 <- "C:/Users/juanp/OneDrive/Área de Trabalho/UNIBO - Notes/Big Data in Social Sciences/Lab/Assignment/PIB_dos_Municípios_base_de_dados_2010_2021.xlsx"
+ 
+data_2 <- read_excel(gdp_vari_2010, col_names = TRUE)[, c(1, 5, 7, 8, 33, 34, 39,
+ 40)]
+ 
+library(dplyr)
+ 
+ ##important!!
+ 
+ colnames(data_1) <- colnames(data_2)
+ 
+ municipality_codes <- unique(data_1$`Código do Município`)
+ 
+ combined_datasets <- list()
+ 
+ municipality_codes <- unique(data_1$`Código do Município`)
+ 
+ # Loop through each municipality code
+ 
+ for (code in municipality_codes) {
+ # Filter rows from both datasets for the current municipality code
+ dataset_1_filtered <- data_1[data_1$`Código do Município` == code, ]
+ dataset_2_filtered <- data_2[data_2$`Código do Município` == code, ]
+ combined_dataset <- bind_rows(dataset_1_filtered, dataset_2_filtered)
+ # Store the combined dataset in the list, using the municipality code as the 
+ #list name
+ combined_datasets[[as.character(code)]] <- combined_dataset
+ }
+ 
+ fixed_dataset <- bind_rows(combined_datasets, .id = "Municipality_Code")
+ #to put all of them in a unique dataset
+ 
+ #View(fixed_dataset)
+ 
+ ###Separation
+ #
+ GDP_AgricultureM <- fixed_dataset[ , -c(1, 7:9)]
+ 
+ # calculate the percent change from 1999 to 2012
+#GDP_Agrifil <- GDP_AgricultureM %>%
+  #mutate(
+    #percent_change = ((`2021` - `2002`) / `2002`) * 100
+ # ) %>%
+  #filter(percent_change >= 1000)  # for changing city increase just change the value.
+
+# the problem will be to define a specific value of increase considered acceptable
+
+ #View(GDP_AgricultureM)
+ 
+ # Filter for relevant years and columns
+GDP_AgricultureM_filtered <- GDP_AgricultureM %>%
+  filter(Ano %in% c(2002, 2021)) %>%  # Keep only 2002 and 2021
+  select(`Nome do Município`, `Ano`, `Valor adicionado bruto da Agropecuária, \r\na preços correntes\r\n(R$ 1.000)`, `Código do Município`, `Sigla da Unidade da Federação`)  # Keep relevant columns
+
+# Calculate percentage change for each city
+GDP_Agrifil <- GDP_AgricultureM_filtered %>%
+  pivot_wider(names_from = `Ano`, values_from = `Valor adicionado bruto da Agropecuária, \r\na preços correntes\r\n(R$ 1.000)`) %>%  # Reshape for comparison
+  mutate(
+    absolute_change = `2021` - `2002`,  # Absolute difference
+    percent_change = ((`2021` - `2002`) / `2002`) * 100  # Percentage change
+  ) %>%
+  arrange(desc(percent_change))  # Sort by highest percentage increase
+
+# Filter cities based on a threshold (e.g., >= 50% increase)
+cities_increase <- GDP_Agrifil %>%
+  filter(percent_change >= 50)
+
+# Filter cities based on decrease (e.g., <= -10% decrease)
+cities_decrease <- GDP_Agrifil %>%
+  filter(percent_change <= -10)
+
+# View the results
+#View(cities_increase)  # Cities with significant increase
+#View(cities_decrease)  # Cities with significant decrease
+
+# Set the desired percentage change threshold (e.g., 1000%)
+threshold <- 1000  # Adjust this to any desired value
+
+# Filter cities based on the threshold for percent_change
+cities_increasedfil_AGR <- GDP_Agrifil %>%
+  filter(percent_change >= threshold)  # Use percent_change instead of percentage_inc
+
+# View the result
+#View(cities_increasedfil_AGR)
+
+### Do that with Industry as well so that it can be comparable
+
+GDP_IndustryM <- fixed_dataset[ , -c(1, 6, 8:9)]
+
+GDP_IndustryM_filtered <- GDP_IndustryM %>%
+  filter(Ano %in% c(2002, 2021)) %>%  # Keep only 2002 and 2021
+  select(`Nome do Município`, `Ano`, `Valor adicionado bruto da Indústria,\r\na preços correntes\r\n(R$ 1.000)`, `Código do Município`, `Sigla da Unidade da Federação`)  # Keep relevant columns
+
+# Calculate percentage change for each city in the industry data
+GDP_IndustryFil <- GDP_IndustryM_filtered %>%
+  pivot_wider(names_from = `Ano`, values_from = `Valor adicionado bruto da Indústria,\r\na preços correntes\r\n(R$ 1.000)`) %>%  # Reshape for comparison
+  mutate(
+    absolute_change = `2021` - `2002`,  # Absolute difference
+    percent_change = ((`2021` - `2002`) / `2002`) * 100  # Percentage change
+  ) %>%
+  arrange(desc(percent_change))  # Sort by highest percentage increase
+
+# Filter cities based on a threshold (e.g., >= 50% increase)
+cities_increase_industry <- GDP_IndustryFil %>%
+  filter(percent_change >= 50)  # Adjust percentage threshold if needed
+
+# Filter cities based on decrease (e.g., <= -10% decrease)
+cities_decrease_industry <- GDP_IndustryFil %>%
+  filter(percent_change <= -10)
+
+# Set the desired percentage change threshold (e.g., 1000%)
+threshold_industry <- 1000  # Adjust this to any desired value for the industry dataset
+
+# Filter cities based on the threshold for percent_change in industry
+cities_increasedfil_Industry <- GDP_IndustryFil %>%
+  filter(percent_change >= threshold_industry)  # Use percent_change instead of percentage_inc
+
+# View the result
+#View(cities_increasedfil_Industry)
+
+
+######## NOW, I MUST SEPARATE THEM IN TWO DIFFERENT TIME PERIODS: PROBABLY 2002 TO 2011,2012 TO 2021
+```
+
+Having two different periods 2002:2011 and 2012:2021, so that it's possible to have a more realistic notion of which cities did have a great increase.
+
+```{r}
+
+# Filter GDP_AgricultureM for the relevant periods (2002-2011 and 2012-2021)
+GDP_AgricultureM_periods <- GDP_AgricultureM %>%
+  filter(Ano %in% c(2002:2011, 2012:2021))  # Keep years in the two periods
+
+# Separate into two periods: 2002-2011 and 2012-2021
+GDP_AgricultureM_period_1 <- GDP_AgricultureM_periods %>%
+  filter(Ano <= 2011)  # Filter for 2002-2011
+
+GDP_AgricultureM_period_2 <- GDP_AgricultureM_periods %>%
+  filter(Ano >= 2012)  # Filter for 2012-2021
+
+# Reshape and calculate percentage change for the first period (2002-2011)
+GDP_AgricultureM_period_1_wide <- GDP_AgricultureM_period_1 %>%
+  pivot_wider(names_from = Ano, values_from = `Valor adicionado bruto da Agropecuária, \r\na preços correntes\r\n(R$ 1.000)`) %>%
+  mutate(
+    absolute_change_2002_2011 = `2011` - `2002`,  # Absolute change in the first period
+    percent_change_2002_2011 = ((`2011` - `2002`) / `2002`) * 100  # Percentage change
+  )
+
+# Reshape and calculate percentage change for the second period (2012-2021)
+GDP_AgricultureM_period_2_wide <- GDP_AgricultureM_period_2 %>%
+  pivot_wider(names_from = Ano, values_from = `Valor adicionado bruto da Agropecuária, \r\na preços correntes\r\n(R$ 1.000)`) %>%
+  mutate(
+    absolute_change_2012_2021 = `2021` - `2012`,  # Absolute change in the second period
+    percent_change_2012_2021 = ((`2021` - `2012`) / `2012`) * 100  # Percentage change
+  )
+
+# Combine both periods for comparison
+GDP_AgricultureM_comparison <- full_join(
+  GDP_AgricultureM_period_1_wide,
+  GDP_AgricultureM_period_2_wide,
+  by = c("Nome do Município", "Código do Município", "Sigla da Unidade da Federação")
+)
+
+# View the comparison dataset
+# View(GDP_AgricultureM_comparison)
+
+# Set the desired percentage change threshold (e.g., 1000%)
+threshold <- 1000  # Adjust this to any desired value
+
+# Filter cities for the 2002-2011 period with percentage change >= threshold
+GDP_AgricultureM_period_1_filtered <- GDP_AgricultureM_period_1_wide %>%
+  filter(percent_change_2002_2011 >= threshold)
+
+# Filter cities for the 2012-2021 period with percentage change >= threshold
+GDP_AgricultureM_period_2_filtered <- GDP_AgricultureM_period_2_wide %>%
+  filter(percent_change_2012_2021 >= threshold)
+
+# View the filtered results for each period
+View(GDP_AgricultureM_period_1_filtered)  # Cities with significant increase in 2002-2011
+View(GDP_AgricultureM_period_2_filtered)  # Cities with significant increase in 2012-2021
+
+
+
+
+###################################################################################
+
+# Filter GDP_IndustryM for the relevant periods (2002-2011 and 2012-2021)
+GDP_IndustryM_periods <- GDP_IndustryM %>%
+  filter(Ano %in% c(2002:2011, 2012:2021))  # Keep years in the two periods
+
+# Separate into two periods: 2002-2011 and 2012-2021
+GDP_IndustryM_period_1 <- GDP_IndustryM_periods %>%
+  filter(Ano <= 2011)  # Filter for 2002-2011
+
+GDP_IndustryM_period_2 <- GDP_IndustryM_periods %>%
+  filter(Ano >= 2012)  # Filter for 2012-2021
+
+# Reshape and calculate percentage change for the first period (2002-2011)
+GDP_IndustryM_period_1_wide <- GDP_IndustryM_period_1 %>%
+  pivot_wider(names_from = Ano, values_from = `Valor adicionado bruto da Indústria,\r\na preços correntes\r\n(R$ 1.000)`) %>%
+  mutate(
+    absolute_change_2002_2011 = `2011` - `2002`,  # Absolute change in the first period
+    percent_change_2002_2011 = ((`2011` - `2002`) / `2002`) * 100  # Percentage change
+  )
+
+# Reshape and calculate percentage change for the second period (2012-2021)
+GDP_IndustryM_period_2_wide <- GDP_IndustryM_period_2 %>%
+  pivot_wider(names_from = Ano, values_from = `Valor adicionado bruto da Indústria,\r\na preços correntes\r\n(R$ 1.000)`) %>%
+  mutate(
+    absolute_change_2012_2021 = `2021` - `2012`,  # Absolute change in the second period
+    percent_change_2012_2021 = ((`2021` - `2012`) / `2012`) * 100  # Percentage change
+  )
+
+# Combine both periods for comparison
+GDP_IndustryM_comparison <- full_join(
+  GDP_IndustryM_period_1_wide,
+  GDP_IndustryM_period_2_wide,
+  by = c("Nome do Município", "Código do Município", "Sigla da Unidade da Federação")
+)
+
+# View the comparison dataset
+#View(GDP_IndustryM_comparison)
+
+# Set the desired percentage change threshold (e.g., 1000%)
+threshold <- 1000  # Adjust this to any desired value
+
+# Filter cities for the 2002-2011 period with percentage change >= threshold
+GDP_IndustryM_period_1_filtered <- GDP_IndustryM_period_1_wide %>%
+  filter(percent_change_2002_2011 >= threshold)
+
+# Filter cities for the 2012-2021 period with percentage change >= threshold
+GDP_IndustryM_period_2_filtered <- GDP_IndustryM_period_2_wide %>%
+  filter(percent_change_2012_2021 >= threshold)
+
+# View the filtered results for each period
+#View(GDP_IndustryM_period_1_filtered)  # Cities with significant increase in 2002-2011
+#View(GDP_IndustryM_period_2_filtered)  # Cities with significant increase in 2012-2021
+
+### Make a summary of the data so that it's possible to use the percentage of the states that most increased.
+```
+
+```{r}
+
+```
+
+(To be deleted)
+
+```{r}
+#Trying to put everything together
+#third variable name is not equal so I'm first fixing it
+# Renaming the third columns
+
+colnames(GDP_Agri1)[3] <- "Gross Agriculture Value (R$ 1.000)"
+colnames(GDP_Agri2)[3] <- "Gross Agriculture Value (R$ 1.000)"
+
+
+# Now join the datasets
+#GDP_Agri1$`Gross Agriculture Value (R$ 1.000)` <- round(GDP_Agri1$`Gross Agriculture Value (R$ 1.000)`, 2)
+#GDP_Agri2$`Gross Agriculture Value (R$ 1.000)` <- round(GDP_Agri2$`Gross Agriculture Value (R$ 1.000)`, 2)
+
+
+GDP_Agriculture <- full_join(GDP_Agri1, GDP_Agri2, by = c("Ano", "Nome do Município", "Gross Agriculture Value (R$ 1.000)"))
+
+#GDP_Agriculture <- GDP_Agriculture %>%
+  #mutate(`Gross Agriculture Value (R$ 1.000)` = coalesce(`Gross Agriculture Value (R$ 1.000).x`, `Gross Agriculture Value #(R$ 1.000).y`)) %>%
+  #select(-ends_with(".x"), -ends_with(".y"))
+
+#for stopping the automatic configuration of the colomn widening
+options(tibble.width = Inf)  # Prevent dynamic resizing for wide columns
+options(tibble.print_max = 10, tibble.print_min = 10)  # Print only 10 rows
+
+#View(GDP_Agriculture)
+
+#now the same but for industry
+
+colnames(GDP_Indus1)[3] <- "Gross Industrial Value (R$ 1.000)"
+colnames(GDP_Indus2)[3] <- "Gross Industrial Value (R$ 1.000)"
+
+GDP_Industry <- full_join(GDP_Indus1, GDP_Indus2, by = c("Ano", "Nome do Município", "Gross Industrial Value (R$ 1.000)"))
+
+#View(GDP_Industry)
+
+#Attention -> there's infor in the second table on the theree activities most practicied (the only problem is that there's not such a data for the other years)
+
+#View(GDP_Agri2)
+
+
+```
+
+```{r}
+
+#Filtering cities which are available for certain years
+#filtered_df <- df %>%
+  #group_by(`Nome do Município`) %>%
+  #filter(any(Ano == 2002) & any(Ano == 2021)) %>%
+  #ungroup()
+
+##This uses 
+#GDP_AGR_percentage <- GDP_Agriculture %>%
+  #group_by(`Nome do Município`) %>%                                # Group by city
+  #summarize(
+    #value_2002 = sum(`Gross Agriculture Value (R$ 1.000)`[Ano == 2002], na.rm = TRUE), # Sum for 2002
+    #value_2021 = sum(`Gross Agriculture Value (R$ 1.000)`[Ano == 2021], na.rm = TRUE), # Sum for 2021
+    #percentage_increase = ((value_2021 - value_2002) / value_2002) * 100              # Calculate % increase
+  #) %>%
+  #filter(!is.na(value_2002) & value_2002 > 0) %>%       # Exclude NA and non-positive values for baseline
+  #filter(percentage_increase > 100) %>%                 # Keep cities with >50% growth
+  #arrange(desc(percentage_increase))                   # Sort by highest growth
+
+##This uses the group as comparison for both periods the percentage
+GDP_AGR_percentage <- GDP_Agriculture %>%
+  group_by(`Nome do Município`) %>%
+  summarize(
+    value_2002_2010 = sum(`Gross Agriculture Value (R$ 1.000)`[Ano >= 2002 & Ano <= 2010], na.rm = TRUE),
+    value_2011_2021 = sum(`Gross Agriculture Value (R$ 1.000)`[Ano >= 2011 & Ano <= 2021], na.rm = TRUE),
+    percentage_increase = ((value_2011_2021 - value_2002_2010) / value_2002_2010) * 100
+  ) %>%
+  filter(!is.na(value_2002_2010) & value_2002_2010 > 0) %>% # Exclude NA and non-positive values for baseline
+  arrange(desc(percentage_increase))                       # Sort by highest growth
+
+# View the result
+#print(result)
+
+# Percentage increase for 2002–2010
+percent_increase_2002_2010 <- GDP_Agriculture %>%
+  filter(Ano >= 2002 & Ano <= 2010) %>%
+  group_by(`Nome do Município`) %>%
+  summarize(
+    value_start = sum(`Gross Agriculture Value (R$ 1.000)`[Ano == 2002], na.rm = TRUE),
+    value_end = sum(`Gross Agriculture Value (R$ 1.000)`[Ano == 2010], na.rm = TRUE),
+    percentage_increase = ((value_end - value_start) / value_start) * 100
+  ) %>%
+  filter(!is.na(value_start) & value_start > 0 & percentage_increase > 1000) %>% # Filter only positive growth
+  arrange(desc(percentage_increase))
+
+# Percentage increase for 2011–2021
+percent_increase_2011_2021 <- GDP_Agriculture %>%
+  filter(Ano >= 2011 & Ano <= 2021) %>%
+  group_by(`Nome do Município`) %>%
+  summarize(
+    value_start = sum(`Gross Agriculture Value (R$ 1.000)`[Ano == 2011], na.rm = TRUE),
+    value_end = sum(`Gross Agriculture Value (R$ 1.000)`[Ano == 2021], na.rm = TRUE),
+    percentage_increase = ((value_end - value_start) / value_start) * 100
+  ) %>%
+  filter(!is.na(value_start) & value_start > 0 & percentage_increase > 1000) %>% # Filter only positive growth
+  arrange(desc(percentage_increase))
+
+# View results
+print("Positive Percentage Increase (2002–2010):")
+View(percent_increase_2002_2010)
+
+print("Positive Percentage Increase (2011–2021):")
+View(percent_increase_2011_2021)
+
+
+# View the result
+#print(result)
+#View(GDP_AGR_percentage)
+
+
+#GDPm_AGR_filtered <- GDP_Agriculture %>%
+  #mutate(
+    #percent_change_AGR = ((`2002` - `1999`) / `1999`) * 100
+  #) %>%
+  #filter(percent_change_AGR >= 1000)
+
+```
+
+### Parties
+
+h[ttps://pt.wikipedia.org/wiki/Posicionamentos_dos_partidos_brasileiros](ttps://pt.wikipedia.org/wiki/Posicionamentos_dos_partidos_brasileiros)
+
+```{r warning = FALSE}
+
+library(devtools)
+library(rvest)
+library(tidyverse)
+
+parties<- read_html("https://pt.wikipedia.org/wiki/Posicionamentos_dos_partidos_brasileiros")
+
+parties<- parties|>
+  html_element("body")|>
+  html_element("table")|>
+  html_table()
+
+parties<- parties|>
+  filter(Partido != "Referências")
+
+colnames(parties)<-c("party","acronym","electoral_legend","electoral_spectrum","ideogology","cannabis_legalization","desarmament_statute","abortion_decriminalization","LGBTQ+_marriage","reduction_penal_age","privatization","university_quotas","sexual_education","politics_religion","militarism","ruralism","labourism")
+
+library(knitr)
+library(kableExtra)
+
+head(parties)|>
+  kable()|>
+  kable_styling(font_size = 10)
+```
+
+**operationalization**
+
+We create an index for all these features rangin from -3 to +3, where -3is strong disagreement, 0 is neutrality and +3 is strong agreement.
+
+progrssism is on a -1, + 1 scale, fewer nuances
+
+```{r}
+
+#response mapping for opinions
+
+response_mapping <- c(
+  "Apoia fortemente" = 3,
+  "Apoia de maneira fraca" = 1,
+  "Apoia" = 2,
+  "Neutro/Sem clara opinião" = 0,
+  "Neutro/Sem opinião formada" = 0,
+  "Neutro/Sem clara opinião formada" = 0,
+  "Não apoia" = -2,
+  "Não  apoia" = -2,
+  "Não apoia de maneira fraca" = -1,
+  
+  #not to drop the parties having no clear opinion, we consider those with no information neutral. They are not too many and the difference may be minimal.
+  
+  "Sem informações claras" = 0,
+  "Sem informação clara" = 0,
+  "Sem informações claras\" \"" = 0,
+  
+  #cannabis
+  "Não apoia nem legalização nem descriminalização" = -3, "Não apoia, porém apoia uma descriminalização do usuário" = -1,
+  "Neutro, permite a opinião individual dos seus afiliados" = 0,
+  "Não apoia, porém com tendências de apoio futuro" = 0,
+  
+  #armas
+  "Apoia, porém com uma flexibilização para áreas rurais" = +1,
+  
+  #abortion
+  "Neutro, considera-se pró-vida porém com pró-escolha também" = 0,
+  "Não apoia, salvo nas situações já previstos em lei, e no caso de inviabilidade do nascituro" = -1,
+  
+  # privatization
+  "Apoia a privatização de algumas empresas que não geram lucro" = +1,
+ 
+  # 
+  
+  #progressismo
+  "Conservador" = -1,
+  "Neutro" = 0,
+  "Feminismo Conservador" = -1,
+  "Progressista"= 1,
+  
+  #orientation
+  "Extrema- direita" = 3,
+  "Extrema-direita" = 3,
+  "Direita" = 2,
+  "Centro-direita" = 1,
+  "Centro" = 0,
+  "Centro-esquerda" = -1,
+  "Esquerda" = -2,
+  "Extrema-esquerda" = -3
+  
+)
+
+
+indicized_table<- parties %>%
+  mutate(across(
+    starts_with("electoral_spectrum") |
+      starts_with("ideogology") | 
+      starts_with("cannabis_legalization")| 
+      starts_with("abortion_decriminalization") |
+      starts_with("LGBTQ+_marriage") | 
+      starts_with("reduction_penal_age") | 
+      starts_with("privatization") | 
+      starts_with("university_quotas") | 
+      starts_with("sexual_education") | 
+      starts_with("politics_religion") | 
+      starts_with("militarism") | 
+      starts_with("ruralism")| 
+      starts_with("labourism"),
+    ~ recode(.x, !!!response_mapping, .default = 0), 
+    .names = "{.col}_score"
+  ))
+
+#delete the descriptive columns
+
+indicized_table<-indicized_table[,-(3:17)]
+
+#change some labels to make them more informative
+indicized_table <-indicized_table|>
+  rename( sx_dx_score = electoral_spectrum_score,
+          #lower when leftist and higher when right-wing
+          progressism_score = ideogology_score)
+          #lower if conservative and higher if progressist
+
+```
+
+**centrão**
+
+```{r}
+
+library(readxl)
+centrão <- read_excel("C:/Users/juanp/OneDrive/Área de Trabalho/UNIBO - Notes/Big Data in Social Sciences/Lab/Assignment/centrão.xlsx")
+
+#replace president with year of election
+colnames(centrão)<-c("party","1985","1990","1992","1995","1999","2003","2007","2011","2015","2016","2019","2023")
+
+#fix names to match the parties dataset
+centrão$party<- c("PP","MDB","PL","UNIÃO","PRD","AGIR","AVANTE","PODE","REPUBLICANOS","PSD","SOLIDARIEDADE")
+
+#centrão
+
+# G = with the gov
+# O = at the opposition
+# I = independent
+# SRP = without parliamentary representation
+```
+
+```{r}
+#which parties to define as "centrão"?
+#for now let us put them all inside
+
+centrão_parties<- centrão$party
+
+```
+
+PCA
+
+```{r}
+
+#let's rename it 
+PCA_data<- indicized_table 
+
+library(corrplot)
+
+corrMatrix<-PCA_data |> 
+  select(-c(party, acronym)) |> #remove non-index vars
+  cor() 
+
+corrplot(corrMatrix, method = "color")
+# poi la faremo più fancy, però intanto c'è
+
+###########
+
+
+PCA <-PCA_data |> 
+  select(-c(party, acronym)) |> 
+  prcomp()
+
+library(broom)
+PCA |> 
+  tidy(matrix = "eigenvalues")
+
+#the first principal component explains more than 50% !!!
+
+```
+
+```{r}
+PCA_var<-PCA |> 
+  # Extract variable coordinates
+  tidy(matrix = "rotation") %>%
+  # Format table form long to wide
+  pivot_wider(names_from = "PC", names_prefix = "PC", values_from = "value") |> 
+  # Rename column with variable names
+  rename(Variable=column) |> 
+  # 'Clean' variable names 
+  # Upper case on first letter
+  mutate(Variable=stringr::str_to_title(Variable)) |> 
+  # Change '_' for space
+  mutate(Variable=stringr::str_replace_all(Variable,"_"," "))
+
+head(PCA_var)
+
+######
+
+# Load ggrepel to avoid variable names to overlap
+library(ggrepel)
+
+var<-ggplot(data=PCA_var,aes(PC1, PC2)) +
+  # Add variables arrows
+  geom_segment(
+    xend = 0, yend = 0, 
+    arrow = arrow(
+      length = unit(0.03, "npc"),
+      ends = "first"
+    )
+  )+
+  # Add variables names
+  geom_text_repel(
+    aes(label = Variable),
+    hjust = 1,size=3,
+    min.segment.length = Inf,
+    nudge_x=0.01,nudge_y=0.01
+  ) +
+  coord_fixed()+
+  labs(
+    title = 'Plot of variables',
+    x='PC1 (54%)',
+    y='PC2 (10%)'
+  )+
+  theme_minimal()
+
+var
+
+
+#the first component is strongly related in particular to progressism and politics-religion, among others. So this component enables to fairly infer whether the party is progressist or conservative.
+# it may be due to lower variability in the variable, maybe? (there are no nuances apart from neutral)
+```
+
+```{r}
+PCA_indiv<-PCA |> 
+  broom::augment(PCA_data)
+
+# Plot of individuals
+plot<-ggplot(
+  data=PCA_indiv,
+  aes(.fittedPC1, .fittedPC2))+
+  geom_point()+
+  labs(
+    title = 'Plot of parties',
+    x='PC1 (54%)',
+    y='PC2 (10%)'
+  )+
+  theme_minimal()
+
+plot
+
+
+#plot of centrao parties
+
+centrão_index <- PCA_indiv|>
+  filter(acronym %in% centrão_parties)
+
+ggplot(
+  data=PCA_indiv,
+  aes(.fittedPC1, .fittedPC2))+
+  geom_point(color = "lightgrey")+
+  labs(
+    title = 'Plot of parties',
+    x='PC1 (54%)',
+    y='PC2 (10%)'
+  )+
+  geom_point(data=centrão_index, 
+             aes(.fittedPC1, .fittedPC2), 
+             color="red")+
+  geom_text_repel(data =centrão_index, aes(label = acronym, color = "red"))+
+  theme_minimal()
+
+#no idea how to remove the side thing there but ok
+```
+
+```{r}
+#we can also plot variables of interest, for example
+
+centrão_index1<- indicized_table|>
+  filter(acronym %in% centrão_parties)
+
+ggplot(
+  data=PCA_indiv,
+  aes(progressism_score, sx_dx_score))+
+  geom_point(color = "lightgrey")+
+  labs(
+    title = 'Plot of parties',
+    x='progressism',
+    y='left vs right wing'
+  )+
+  geom_point(data=centrão_index1, 
+             aes(progressism_score, sx_dx_score), 
+             color="red")+
+  geom_text_repel(data =centrão_index, aes(label = acronym, color = "red"))+
+  theme_minimal()
+
+#definitely need to find a fancier way to display it. A barplot would be better
+```
+
+### Emendas by state and region (2014-2024)
+
+```{r}
+
+emendas_1<- read.csv("C:/Users/juanp/OneDrive/Área de Trabalho/UNIBO - Notes/Big Data in Social Sciences/Lab/Assignment/Emendas.csv", header = FALSE, sep = ";")
+
+#set headers
+headers<- emendas_1[1,]
+colnames(emendas_1)<-c()
+emendas_1<-emendas_1[-1,]
+
+#select vars of interest and adjust headers
+emendas_1<- emendas_1[,c(2,7,9,12)]
+colnames(emendas_1)<-c("year","location","type","amount")
+
+
+# fix names with question romboid
+emendas_1$location <- as.character(emendas_1$location)
+emendas_1$type <- as.character(emendas_1$type)
+
+library(tidyverse)
+emendas_1 <- emendas_1 %>%
+  mutate(across(everything(), ~ iconv(., from = "", to = "UTF-8", sub = "")))
+
+#fix locations , separating municipality and UF
+emendas_1<- emendas_1|>
+  separate_wider_delim( location,
+                       delim = "-",
+                       names =c( "municipality","UF"),
+                       too_few = "debug",
+                       too_many = "debug")
+
+#fix state codes
+emendas_1$UF<-str_replace_all(emendas_1$UF, " ", "")
+
+#fix the rest
+
+emendas_1 <- emendas_1 |>  mutate(
+    UF = case_when(
+      municipality == "RIO DE JANEIRO (UF)" ~ "RJ",
+      municipality == "RIO GRANDE DO NORTE (UF)" ~ "RN",
+      municipality == "MINAS GERAIS (UF)" ~ "MG",
+      municipality == "RIO GRANDE DO SUL (UF)" ~ "RS",
+      municipality == "CEARA' (UF)" ~ "CE",
+      municipality == "ESPRITO SANTO (UF)" ~ "ES",
+      municipality == "PIAU (UF)" ~ "PI",
+      municipality == "GOIS (UF)" ~ "GO",
+      municipality == "PARABA (UF)" ~ "PB",
+      municipality == "DISTRITO FEDERAL (UF)" ~ "DF",
+      municipality == "CEAR (UF)" ~ "CE",
+      municipality == "CEAR" ~ "RN",
+      municipality == "MATO GROSSO (UF)" ~ "MT",
+      municipality == "ACRE (UF)" ~ "AC",
+      municipality == "PAR (UF)" ~ "PA",
+      municipality == "PERNAMBUCO (UF)" ~ "PE",
+      municipality == "SO PAULO (UF)" ~ "SP",
+      municipality == "ALAGOAS (UF)" ~ "AL",
+      municipality == "BIRITIBA" ~ "SP",
+      municipality == "MARANHO (UF)" ~ "MA",
+      municipality == "SANTA CATARINA (UF)" ~ "SC",
+      municipality == "BAHIA (UF)" ~ "BA",
+      municipality == "PEIXE" ~ "PA",
+      municipality == "MATO GROSSO DO SUL (UF)" ~ "MS",
+      municipality == "RORAIMA (UF)" ~ "RR",
+      municipality == "PARAN (UF)" ~ "PR",
+      municipality == "XANGRI" ~ "RS",
+      municipality == "VENHA" ~ "RN",
+      municipality == "AMAZONAS (UF)" ~ "AM",
+      municipality == "GOVERNADOR DIX" ~ "RN",
+      municipality == "TOCANTINS (UF)" ~ "TO",
+      municipality == "PINGO" ~ "MG",
+      municipality == "SERGIPE (UF)" ~ "SE",
+      municipality == "PARIQUERA" ~ "SP",
+      municipality == "AMAP (UF)" ~ "AP",
+      municipality == "OLHO" ~ "RN",
+      municipality == "OLHOS" ~ "MG",
+      municipality == "PASSA" ~ "MG",
+      municipality == "ARCO" ~ "SP",
+      municipality == "XIQUE" ~ "BA",
+      municipality == "SEM" ~ "MG",
+      municipality == "GUARDA" ~ "MG",
+      municipality == "CONCEIO DO LAGO" ~ "MA",
+      municipality == "JI" ~ "RO",
+      municipality == "ENTRE" ~ "RS",
+      municipality == "IGARAP" ~ "PA",
+      municipality == "EMBU" ~ "SP",
+      municipality == "RONDNIA (UF)" ~ "RO",
+      municipality == "TOM" ~ "PA",
+      municipality == "NO" ~ "RS",
+      municipality == "VARRE" ~ "RJ",
+      municipality == "GUAJAR" ~ "RO",
+      municipality == "SAPUCA" ~ "MG",
+      municipality == "PINDAR" ~ "MA",
+      
+      #regions
+      municipality == "MLTIPLO" ~ "multiplos",
+      municipality == "Nacional" ~ "national_level",
+      municipality == "Nordeste" ~ "Nordeste",
+      municipality == "Oeste"  ~ "Centro-Oeste",
+        municipality== "Sudeste"   ~ "Sudeste",
+        municipality== "Exterior"   ~ "Exterior",
+      municipality == "Sul"  ~ "Sul",
+      municipality == "Norte"  ~ "Norte",
+      
+
+      TRUE ~ UF  # Default case
+    ))
+
+#create a var stating the level
+emendas_1<-emendas_1|>
+  mutate(level = case_when(
+    municipality == "MLTIPLO" ~ "varied",
+      municipality == "Nacional" ~ "national",
+      municipality == "Nordeste" ~ "regional",
+      municipality == "Centro-Oeste"  ~ "regional",
+        municipality== "Sudeste"   ~ "regional",
+        municipality== "Exterior"   ~ "abroad",
+      municipality == "Sul"  ~ "regional",
+      municipality == "Norte"  ~ "regional",
+    TRUE  ~ "statal"
+  ))
+
+#fix numerical values
+emendas_1$amount <- gsub(",", ".", emendas_1$amount)  # Replace decimal separator with dot
+emendas_1$amount<- as.numeric(emendas_1$amount)
+
+emendas_1$year<- as.numeric(emendas_1$year)
+
+#keepo vars of interest
+
+emendas_1<-emendas_1|>
+  select(year, municipality, UF, type, amount, level)
+
+```
+
+```{r}
+
+#let's make sure multiple and regional do not coincide with sum of states
+
+#emendas_1|>
+  #group_by(level)|>
+  #summarize( emendas = sum(amount))
+
+#the sum is not the same, hence the different levels are not presenting the same statistics.
+
+```
+
+```{r}
+total_emendas<- sum(emendas_1$amount)
+
+library(knitr)
+total<-emendas_1|>
+  group_by(UF)|>
+  summarize(emendas_bln= sum(amount,na.rm = TRUE)/1000000000,
+             perc_emendas = (sum(amount,na.rm = TRUE)/total_emendas)*100)|>
+  arrange(desc(emendas_bln))
+
+kable(total)
+
+#only by state
+state <- emendas_1 |>
+  filter(level %in% "statal") |>
+  group_by(UF) |>
+  summarize(emendas_bln = sum(amount, na.rm = TRUE) / 1000000000) |>
+  ungroup() |>
+  mutate(
+    total_emendas_bln = sum(emendas_bln), # Calculate the total outside grouping
+    perc_emendas = (emendas_bln / total_emendas_bln) * 100
+  ) |>
+  arrange(desc(emendas_bln))|>
+  select(-total_emendas_bln)
+
+  
+
+kable(state)
+
+#make sure the sum is 100
+#state|>
+  #summarize( sum = sum(perc_emendas))
+
+
+# I do not get why data does not display a great disparity as the second one but vabbe
+            
+```
+
+```{r}
+
+#plot development in time
+
+data <- emendas_1 |>
+  filter(!level %in% c("varied", "national", "regional","abroad")) |> # Exclude specified UF values
+  group_by(year, UF) |>
+  summarize(emendas_bln = sum(amount, na.rm = TRUE) / 1000000000, .groups = "drop")
+
+
+
+library(ggplot2)
+library(ggthemes)
+ggplot(data, aes(y = emendas_bln, x = year , color = UF))+
+  geom_line() +
+theme_clean()
+
+  
+```
+
+Dataset with name of politician giving the emenda and municipality/state receiving + sum of the emenda\
+\
+
+```{r}
+
+#reiterate the reading of the csv file and store them into an empty list.
+#C:/Users/juanp/OneDrive/Área de Trabalho/UNIBO - Notes/Big Data in Social Sciences/Lab/Assignment/emendas-por-favorecido.csv
+
+list<-list()
+
+for (i in 1:9){
+  
+  file<-paste0("C:/Users/juanp/OneDrive/Área de Trabalho/UNIBO - Notes/Big Data in Social Sciences/Lab/Assignment/emendas-por-favorecido",  #substitute with your path + the part of the file not being the number
+               i,".csv")
+  #substitute with your path + the part of the file not being the number
+  
+list[[i]]<-read.csv(file, sep = ";")
+                    
+}
+
+  
+#create a unique tibble
+
+emendas_2<-bind_rows(list, .id = "source")
+
+#get rid of the source column
+emendas_2<- emendas_2|>
+  select(-c("source","X"))
+
+head(emendas_2)
+```
+
+Considerations about emendas
+
+-   since the names of authors were badly written in the electoral file we cannot probably reconnect them. However we have the states and amount of emendas they obtained
+
+-   also years are missing (absurd)
+
+-   in any case, ASSUMING that we have a similar amount of data per state and covering the same range of years, we can infer which states receive more emendas and even quantifying them.
+
+```{r}
+
+#change the thousand separator with nothing and decimal separator with a dot, otherwise R will not transform Valor into numerical
+
+emendas_2$Valor <- gsub("\\.", "", emendas_2$Valor)  # Remove thousands separator
+
+emendas_2$Valor <- gsub(",", ".", emendas_2$Valor)  # Replace decimal separator with dot
+
+emendas_2$Valor <- as.numeric(emendas_2$Valor)
+
+total_emendas<-sum(emendas_2$Valor, na.rm = TRUE)
+
+
+emendas_stats<- emendas_2|>
+  group_by (UF.do.Favorecido)|>
+  summarize( emendas_blns = sum(Valor/1000000000),
+             perc_emendas= sum(Valor/total_emendas*100))|>
+  replace_na(list(emendas_blns= 0))|>
+  replace_na(list(perc_emendas= 0))
+
+
+emendas_stats
+```
+
+```{r}
+
+emendas_pie<- ggplot( emendas_stats, aes( x = "", y = perc_emendas , fill = UF.do.Favorecido)) +
+   geom_bar(stat = "identity", width = 1, color = "black",size = 0.3) +
+  coord_polar(theta = "y") +
+  theme_void() +
+  theme(
+    legend.text = element_text(size = 8),  # Adjust legend text size
+    axis.text = element_blank(34y)     # Adjust axis text size
+  ) 
+  
+emendas_pie
+```
+
+```{r}
+
+#graph without DF of Brasilia
+
+emendas_stats1<-emendas_stats|>
+  filter(UF.do.Favorecido!= "DF")|>
+  mutate( UF.do.Favorecido= as.factor(UF.do.Favorecido))
+
+emendas_pie1 <- ggplot( emendas_stats1, aes( x = UF.do.Favorecido, y = emendas_blns , fill = UF.do.Favorecido)) +
+   geom_bar(stat = "identity", width = 1, color = "black",size = 0.3) +
+  theme_classic()+ 
+  ggtitle("emendas by state (blns R$)")+
+  xlab ( "state (UF)")+
+  ylab ( "blns R$")
+  
+emendas_pie1
+```
+
+```{r}
+
+# I do not manage to merge the two given that the only info in common are state and value, which some observations for sure have in common. This generated a dataset 200mln rown long rather than only 85k
+```
+
+### Dataset on elections
+
+```{r}
+
+election_2024 <- read.csv("C:\\Users\\Utente\\OneDrive\\Desktop\\Big data in soc. sc.s\\report\\votos\\eleicões_2024_pref.csv", header = FALSE, sep = ";")
+#election_2024
+
+#delete headers in the first row and put them as headers
+
+headers<- c(election_2024[1,])
+#headers
+headers<- c("charge","municipality","party","region","state","race","age_cat","gender","education","name","profession","valid_votes","date")
+
+colnames(election_2024)<- headers
+election_2024<-election_2024[-1,]
+
+library(knitr)
+View(election_2024)
+
+```
+
+Dataset on the Elections.\|\|\|\|\|\|\|\|\|\|
+
+```{r}
+
+```
+
+```{r error = FALSE, message = FALSE}
+
+#rename variables using snake case
+variables<-c("municipality","HDI_position","HDI","income_HDI_position","income_HDI","edu_HDI_position","edu_HDI","longevity_HDI_position","longevity_HDI")
+colnames(HDI)<-variables
+
+library(knitr)
+library(kableExtra)
+
+head(HDI)|>
+    kable()|>
+    kable_styling(font_size= 10)
+```
+
+municipalities GDP dataset (2010-2014)
+
+retrieved at this site: h[ttps://sidra.ibge.gov.br/tabela/5938](ttps://sidra.ibge.gov.br/tabela/5938)
+
+```{r}
+
+#export excel file skipping the first 3 lines 
+GDP<-read_excel("GDP_municipalities.xlsx", skip = 3)
+
+colnames(GDP)<- c("municipality","GDP_2010")
+
+kable(head(GDP))
+```
+
+Parties
+
+h[ttps://pt.wikipedia.org/wiki/Posicionamentos_dos_partidos_brasileiros](ttps://pt.wikipedia.org/wiki/Posicionamentos_dos_partidos_brasileiros)
+
+```{r}
+
+library(devtools)
+library(rvest)
+
+parties<- read_html("https://pt.wikipedia.org/wiki/Posicionamentos_dos_partidos_brasileiros")
+
+parties<- parties|>
+  html_element("body")|>
+  html_element("table")|>
+  html_table()
+
+parties<- parties|>
+  filter(Partido != "Referências")
+
+colnames(parties)<-c("party","acronym","electoral_legend","electoral_spectrum","ideogology","cannabis_legalization","desarmament_statute","abortion_decriminalization","LGBTQ+_marriage","reduction_penal_age","privatization","university_quotas","sexual_education","politics_religion","militarism","ruralism","labourism")
+  
+head(parties)|>
+  kable()|>
+  kable_styling(font_size = 10)
+```
