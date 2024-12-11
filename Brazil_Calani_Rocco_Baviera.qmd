@@ -1,6 +1,6 @@
 ---
-title: "Brazil"
-author: "Juan Gustavo Prestes Calani (1071203), Elena Rocco (1068161), Chiara Baviera (1071616)"
+title: "Exploring the relationship of agricultural development and electoral outcomes in Brazil"
+author: "Juan Gustavo Prestes Calani, Elena Rocco, Chiara Baviera"
 format: pdf
 editor: visual
 ---
@@ -155,7 +155,7 @@ It looks like 2019 was a turning point for spurring agricultural growth in sever
 
 We used electoral data dowloaded in the[Supreme Electoral Court (TSE) archives](https://sig.tse.jus.br/ords/dwapr/r/seai/sig-eleicao-arquivo/conjuntos-de-dados?p10_cd_modulo=resultado&session=118004809136717&cs=1iWGX_4kCm1I9RFT7LM3g8OGvjyuhSs0dfNeA6vcgSvnZ5DWoq10rybAKreqCloli3ZA2UxYgg9qMOPODXrRUuA),reporting electoral data from 1998 to 2024. We chose to use the data coming from the section ["Votação candidato"](https://sig.tse.jus.br/ords/dwapr/r/seai/sig-eleicao-arquivo/passo-1?p20_sq_conjunto_dados=15&session=118004809136717&cs=16qyseB2rOIuaxHc8XPeS3xoeL1y26F7Srv6mSThnuasVCHOPxKLkEyIvbSqkvRUz4mubhTQWMiDimKFMFopx_Q) (Candidate ballot). First, we chose only Deputies (Deputado) and Vereadores elections, which alternate every two years. Then we filtered for the variables of interest to addition to the candidate (Nome.candidato) and date of election, that we report below. We followed this procedure to download the dataset for each year. Then, we used a for loop to read the datasets, name them, and insert them into a list, to then bind them in a single long dataset (Elections_1998_2024).
 
-```{r eval = FALSE}
+```{r warning = FALSE}
 
 # Loop to read datasets and insert them into a list. Then concatenate them into one
 
@@ -210,22 +210,13 @@ Here is a description of the variables
 
 #descriptive statitsics???
 
-```{r}
-
-Election_1998_2024|>
-  group_by(Partido)|>
-  summarize(sum(Votos))
-
-
-```
-
 ### Attempts at defining the political spectrum of parties
 
 Defining the political spectrum of Brazilian parties is inherently difficult and out of the scope of this paper. Hence we used two academic papers presented at these sites to scrape data from tables about the parties' classification on a continuous scale ranging from left to right. The \[first paper\]((https://www.scielo.br/j/civitas/a/XPYDSP37JSDdwv3ZrvyZL6h/) presents scores on a scale from 1 to 7, whereas the \[second one\]((https://www.scielo.br/j/dados/a/zzyM3gzHD4P45WWdytXjZWg/?format=pdf&lang=en) from 1 to 10. For this reason, we rescaled the second paper on a scale from 1 to 7 using a user-written function (rescale()). In particular, we categorized parties as belonging to left, center and right based on their position with respect to quartiles: those falling before the first were classified as left, those falling after the third as right, and all those in the middle as center. The categorization was done prior to the merging, so as not to create useless discrepancies whenever the categorization by the two papers was the same. As for the parties presenting ambiguities, we chose to classify them as center, since they all traditionally belonged to the centrão. Finally,for the classification of the remaining parties we used AI to identify the parties that had only changed names and maintained the same orientation. For those without an orientation, we asked the bot to provide an estimate of the score based on the methods of the papers. As we could not scrape the chat, as it is private, we pasted the results in an excel file. The final dataset provides for two interrelated variables: orientation and "Center", a binary variable taking on value 1 if the party belongs to the center and 0 otherwise.
 
 Finally, we added the information about political orientation to the electoral dataset.
 
-```{r  eval=FALSE, warning = FALSE}
+```{r warning = FALSE}
 
 # scrape first classification
 
@@ -349,7 +340,7 @@ Data_Elections_1998_2024<- Data_Elections_1998_2024|>
 
 ```
 
-```{r}
+```{r eval = FALSE}
 # read the tidy dataset with all electoral and orientation data:
 
 Data_Elections_1998_2024<-read.csv("Data_Elections_1998_2024", fileEncoding = "UTF-8")
@@ -363,7 +354,7 @@ Data_Elections_1998_2024<- Data_Elections_1998_2024|>
 Here is a breakdown of the variables included
 
 | variable    | type                                         | description                                         |
-|---------------|--------------------------|-------------------------------|
+|-----------------|-------------------------|------------------------------|
 | Partido     | qualitative , nominal                        | party                                               |
 | orientation | qualitative, ordinal                         | 3 levels: "left", "center","right"                  |
 | Center      | qualitative, binary (expressed as numerical) | = 1 if the party belongs to the center, 0 otherwise |
@@ -472,7 +463,7 @@ here is how we created the variable perc_center
 #join the electoral dataset 
 data_m_agr <- Data_Elections_1998_2024|>
   group_by(Município, Ano.de.eleição)|>
-  summarize( perc_center = round((sum(Votos.válidos[Centre== 1]/sum(Votos.válidos)))*100,2))
+  summarize( perc_center = round((sum(Votos.válidos[center== 1]/sum(Votos.válidos)))*100,2))
 
 ```
 
@@ -486,7 +477,7 @@ election_summary <- Data_Elections_1998_2024 |>
   filter(`Ano.de.eleição` %in% c(2008, 2020)) |> #choose the years of interest 
   group_by(Município,UF,`Ano.de.eleição`) |>
   reframe(Votos_válidos = sum(Votos.válidos, na.rm = TRUE), #calculate tot votes by municipality
-    orientation_center = sum(Votos.válidos[orientation == "centre"], na.rm = TRUE)) #votes to the center 
+    orientation_center = sum(Votos.válidos[orientation == "center"], na.rm = TRUE)) #votes to the center 
     #note: used reframe instead of mutate, as suggested by an error
 
 # Pivot the summarized election data to a wide format
@@ -585,7 +576,7 @@ This graph provides a highly relevant insight: overall, across all Brazil the te
 Here are the new variables created\>
 
 | variable                  | type                  | description                                                                            |
-|---------------|---------------|------------------------------------------|
+|-----------------|-----------------|---------------------------------------|
 | perc_increase_agri        | numerical, continuous | Yearly increase (CAGR) in agriculture GDP from 2008 to 2020 (in percentage points)     |
 | center_perc_points_change | numerical, continuous | change (in percentage points) in the proportion of the population voting to the center |
 | left                      | numerical, continuous | proportion of people voting for the left (in percentage points)                        |
@@ -685,7 +676,7 @@ municipality_orientation_agr <- data %>%
   rename("Municipality" = Município, "Year" = Ano.de.eleição) %>%
   summarize(
     left = round((sum(Votos.válidos[orientation == "left"]) / sum(Votos.válidos)) * 100, 2),
-    center = round((sum(Votos.válidos[orientation == "centre"]) / sum(Votos.válidos)) * 100, 2),
+    center = round((sum(Votos.válidos[orientation == "center"]) / sum(Votos.válidos)) * 100, 2),
     right = round((sum(Votos.válidos[orientation == "right"]) / sum(Votos.válidos)) * 100, 2),
     .groups = "drop")
 
