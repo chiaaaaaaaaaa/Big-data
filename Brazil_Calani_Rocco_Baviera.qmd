@@ -159,20 +159,17 @@ We used electoral data dowloaded in the[Supreme Electoral Court (TSE) archives](
 
 # Loop to read datasets and insert them into a list. Then concatenate them into one
 
-#define years of the datasets for the loop
+
 start_year <- 1998
 end_year <- 2024
 year_interval <- 2
 
-# empty list to use
+
 datasets <- list()
 
 for (year in seq(start_year, end_year, by = year_interval)) {
-  # file path
   file_path <- paste0("votacao_candidato", year, ".csv")
-  # dataset name
   dataset_name <- paste0("Elections_", year)
-  #if the dataset is found, name it and read it
   if (file.exists(file_path)) {
     
     dataset <- read.csv(file_path, fileEncoding = "latin1", sep = ";")
@@ -181,19 +178,17 @@ for (year in seq(start_year, end_year, by = year_interval)) {
     
     datasets[[dataset_name]] <- dataset
     
-    #error to display if not found
   } else {
     message(paste("File for year", year, "does not exist:", file_path))
   }
 }
 
-# Combine all datasets using rbind
+# Combine all datasets
 Elections_1998_2024 <- do.call(rbind, datasets)
 
 #eliminate date
 Elections_1998_2024<-Elections_1998_2024[,-9]
 
-#categorize the variable
 Elections_1998_2024$Partido<- as.factor(Elections_1998_2024$Partido)
 
 ```
@@ -231,7 +226,6 @@ Parties_spectrum <- tables[[2]] |>
 
 #define orientation
 Parties_spectrum <- Parties_spectrum|>
-  #change separator before classifying
   mutate(Média = as.numeric(str_replace(Média,",",".")))|>
   mutate("orientation" = ifelse(Média>=5.2, "right",                  
                           ifelse(Média<3.150,"left","center")))|>
