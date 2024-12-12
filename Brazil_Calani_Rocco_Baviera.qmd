@@ -319,9 +319,6 @@ All_parties_orientation<- All_parties_orientation|>
 Data_Elections_1998_2024<- Elections_1998_2024|>
   left_join(All_parties_orientation, by = "Partido")
 
-#write the csv file to load, rather than running the code
-# write.csv(Data_Elections_1998_2024,"C:\\Users\\Utente\\OneDrive\\Desktop\\Big data in soc. sc.s\\report\\votos\\Data_Elections_1998_2024")
-
 #filter for the years of interest
 Data_Elections_1998_2024<- Data_Elections_1998_2024|>
   filter(Ano.de.eleição >= 2008)
@@ -538,7 +535,8 @@ data<-data_orientation_calculated|>
     "Average change in orientation index" = sum(orientation_change, na.rm = TRUE)/n_municipalities)
 
 
-ggplot (data = data , aes (x = reorder(UF, `Average change in orientation index`), 
+ggplot (data = data , aes (x = reorder(UF,
+`Average change in orientation index`), 
 y =  `Average change in orientation index`, fill = UF))+
     geom_bar(stat = "identity")+
     coord_flip() +
@@ -587,7 +585,8 @@ y = perc_center, color = `Nome da Grande Região`)) +
   geom_point(na.rm = TRUE, alpha = 0.7, shape = 4, size = 0.5) +  
   geom_smooth(method = "lm", se = FALSE, color = "#00008B", linewidth = 0.5) +
   theme_minimal() +
-  scale_color_manual( name = "Region", values = Palette) +  # Use custom colors+
+  scale_color_manual( name = "Region",
+values = Palette) +  # Use custom colors+
    scale_x_continuous(limits = c(0,1500), labels = label_number(scale = 1))+
   scale_y_continuous(labels = label_percent(scale = 1)) + # add percent
   xlab('Agricultural GDP (in bln R$)') +
@@ -627,7 +626,8 @@ scales = "free_y", ncol = 3) +
     scale_y_continuous(labels = scales::label_comma()) +
   scale_x_continuous(breaks = seq(min(data2$Ano),
 max(data2$Ano), by = 4)) +
-  scale_color_manual( name = "Region", values = c("#8DC63F", "#0073A2", "#006400"))+
+  scale_color_manual( name = "Region",
+values = c("#8DC63F", "#0073A2", "#006400"))+
   # each plot is scaled according to the values of the municipality
   theme(legend.position = "bottom",
         legend.title = element_text(size = 10),
@@ -664,9 +664,12 @@ municipality_orientation_agr <- data %>%
   group_by(Município, Ano.de.eleição) %>%
   rename("Municipality" = Município, "Year" = Ano.de.eleição) %>%
   summarize(
-    left = round((sum(Votos.válidos[orientation == "left"]) / sum(Votos.válidos)) * 100, 2),
-    center = round((sum(Votos.válidos[orientation == "center"]) / sum(Votos.válidos)) * 100, 2),
-    right = round((sum(Votos.válidos[orientation == "right"]) / sum(Votos.válidos)) * 100, 2),
+    left = round(
+(sum(Votos.válidos[orientation == "left"]) / sum(Votos.válidos)) * 100, 2),
+    center = round(
+(sum(Votos.válidos[orientation == "center"]) / sum(Votos.válidos)) * 100, 2),
+    right = round(
+(sum(Votos.válidos[orientation == "right"]) / sum(Votos.válidos)) * 100, 2),
     .groups = "drop")
 
 # Add the growth rate from GDP_AGR_percentage2
@@ -688,29 +691,50 @@ formatted_table_wide <- formatted_table_wide %>%
 
 left_colors <- ifelse(
   formatted_table_wide$left_diff > 20, "#90EE90",  # Strong green for >20%
-  ifelse(formatted_table_wide$left_diff > 5 & formatted_table_wide$left_diff <= 20,
+  ifelse(
+formatted_table_wide$left_diff > 5 & formatted_table_wide$left_diff <= 20,
 "#D9F2D1",  # Light green for 5-20%
-    ifelse(formatted_table_wide$left_diff < -20, "#F08080",  # Strong red for <-20%
-      ifelse(formatted_table_wide$left_diff < -5 & formatted_table_wide$left_diff >= -20,
+    ifelse(
+formatted_table_wide$left_diff < -20, "#F08080",  # Strong red for <-20%
+      ifelse(
+formatted_table_wide$left_diff < -5 & formatted_table_wide$left_diff >= -20,
 "#F9D5D3",  # Light red for -20% to -5%
         "#FFFCE8" )))) # White for -5% to 5%
 
 center_colors <- ifelse(
   formatted_table_wide$center_diff > 20, "#90EE90",
-  ifelse(formatted_table_wide$center_diff > 5 & formatted_table_wide$center_diff <= 20,
+  ifelse(
+formatted_table_wide$center_diff > 5 & formatted_table_wide$center_diff <= 20,
 "#D9F2D1",
   ifelse(formatted_table_wide$center_diff < -20, "#F08080",
-  ifelse(formatted_table_wide$center_diff < -5 & formatted_table_wide$center_diff >= -20,
+  ifelse(
+formatted_table_wide$center_diff < -5 & formatted_table_wide$center_diff >= -20,
 "#F9D5D3",
   "#FFFCE8"))))
 
 right_colors <- ifelse(
   formatted_table_wide$right_diff > 20, "#90EE90",
-  ifelse(formatted_table_wide$right_diff > 5 & formatted_table_wide$right_diff <= 20,
+  ifelse(
+formatted_table_wide$right_diff > 5 & formatted_table_wide$right_diff <= 20,
 "#D9F2D1",
-  ifelse(formatted_table_wide$right_diff < -20, "#F08080",
-  ifelse(formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20,
+  ifelse(
+formatted_table_wide$right_diff < -20, "#F08080",
+  ifelse(
+formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20,
 "#F9D5D3",
+        "#FFFCE8"))))
+ChatGPT ha detto:
+ChatGPT
+Per rendere il codice più leggibile e più compatto, puoi andare a capo in corrispondenza di ciascun blocco logico degli ifelse. Usa un'indentazione chiara per evidenziare la struttura gerarchica delle condizioni. Ecco una versione migliorata:
+
+right_colors <- ifelse(
+  formatted_table_wide$right_diff > 20, "#90EE90",
+ifelse(
+formatted_table_wide$right_diff > 5 & formatted_table_wide$right_diff <= 20, "#D9F2D1",
+ifelse(
+formatted_table_wide$right_diff < -20, "#F08080",
+ifelse(
+formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20, "#F9D5D3",
         "#FFFCE8"))))
 
 # Create a styled table with gradient color to the left, center,
@@ -718,7 +742,7 @@ and right columns based on the diff (increase or decrease)
 table1<-formatted_table_wide %>%
   rename( `yearly increase` = perc_increase_agri)%>%
   head(12)%>%
-  select(-left_diff, -center_diff, -right_diff) %>%  # Exclude the diff columns
+  select(-left_diff, -center_diff, -right_diff) %>%  
   kable() %>%
   kable_styling(
     font_size = 10,
@@ -744,7 +768,8 @@ In order to assess the change in political opinion compared to economic developm
 data_m_agr2<- election_summary |>
   inner_join(GDP_AGR_percentage, by = c("Município" = "Nome do Município"))
 
-ggplot(data = data_m_agr2, aes(x = perc_increase_agri, y = center_perc_points_change, color = `Nome da Grande Região`)) +
+ggplot(data = data_m_agr2, aes(x = perc_increase_agri,
+y = center_perc_points_change, color = `Nome da Grande Região`)) +
   geom_point(size = 1, alpha = 0.5, shape = 17) +  # transparency 
   geom_smooth(method="lm", color = "#00008B", linewidth =0.5) +
   scale_color_manual( values = Palette, name = "Region") +
@@ -756,7 +781,7 @@ ggplot(data = data_m_agr2, aes(x = perc_increase_agri, y = center_perc_points_ch
     axis.title.y = element_text(size = 10),
             axis.text.x = element_text(size = 8),
         axis.text.y = element_text(size = 8),)+
-  labs(x = "Yearly % Increase in Agricultural GDP",y = "% point change of votes to the center" )
+  labs(x = "Yearly % Increase in Agricultural GDP",y)
 
 ```
 
