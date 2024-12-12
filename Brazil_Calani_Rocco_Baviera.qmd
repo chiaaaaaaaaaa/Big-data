@@ -183,10 +183,8 @@ for (year in seq(start_year, end_year, by = year_interval)) {
   }
 }
 
-# Combine all datasets
+# Cleaning the dataset
 Elections_1998_2024 <- do.call(rbind, datasets)
-
-#eliminate date
 Elections_1998_2024<-Elections_1998_2024[,-9]
 
 Elections_1998_2024$Partido<- as.factor(Elections_1998_2024$Partido)
@@ -301,10 +299,6 @@ All_parties_orientation <-Parties_spectrum|>
   full_join(Parties_orientation_2, by = c("Partido" = "Partido"))|>
   full_join(Parties_orientation_3,by = c("Partido" = "Partido"))
 
-#define the orientation of contrasting classification
-#All_parties_orientation|>
- # filter(orientation.x != orientation.y)
-
 #since they are all traditionally from centrao, we classify them as center
 All_parties_orientation[8,2]<-"center"
 All_parties_orientation[19,2]<-"center"
@@ -335,11 +329,9 @@ Data_Elections_1998_2024<- Data_Elections_1998_2024|>
 ```
 
 ```{r eval = FALSE}
-# read the tidy dataset with all electoral and orientation data:
 
 Data_Elections_1998_2024<-read.csv("Data_Elections_1998_2024", fileEncoding = "UTF-8")
 
-# filter the period of interest
 Data_Elections_1998_2024<- Data_Elections_1998_2024|>
   filter(Ano.de.eleição >= 2008)|>
   select(-X)
@@ -386,7 +378,7 @@ GDP_AGR_percentage <- GDP_Agri %>%
   #filter out NA and 0 values to avoid computation errors and biases
   filter(!is.na(value_2008) & !is.na(value_2021) & value_2008!= 0 & value_2021 != 0) %>% 
   
-  # Calculate yearly avg percentage increase (CAGR)
+  # Yearly avg percentage increase (CAGR)
   mutate(perc_increase_agri = round((((value_2021 /value_2008)^(1/12))-1) * 100, 2)) %>%
   
   #keep variables of interest
@@ -522,7 +514,6 @@ data_orientation<-Data_Elections_1998_2024|>
              "center" = round((sum(Votos.válidos[orientation == "center"])/sum(Votos.válidos))*100,2),
              "right" = round((sum(Votos.válidos[orientation == "right"])/sum(Votos.válidos))*100,2))
 
-# Filter the data for only 2008 and 2020
 data_orientation_filtered <- data_orientation |>
   filter(Ano.de.eleição %in% c(2008, 2020))|>
   filter(n_distinct(Ano.de.eleição) == 2)  
@@ -764,8 +755,6 @@ ggplot(data = data_m_agr2, aes(x = perc_increase_agri, y = center_perc_points_ch
 ```
 
 ```{r warning = FALSE}
-
-#regression
 
 mod1 <- lm(center_perc_points_change ~ perc_increase_agri, data = data_m_agr2)
 
