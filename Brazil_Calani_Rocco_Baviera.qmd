@@ -666,7 +666,6 @@ municipality_orientation_agr <- municipality_orientation_agr %>%
     by = c("Municipality" = "Nome do Município"))
 
 #table to display:
-
 # Pivot data to get 2008 and 2020 values side by side
 formatted_table_wide <- municipality_orientation_agr %>%
   pivot_wider(names_from = Year, values_from = c(left, center, right))
@@ -697,7 +696,6 @@ right_colors <- ifelse(
   ifelse(formatted_table_wide$right_diff < -20, "#F08080",
   ifelse(formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20, "#F9D5D3",
         "#FFFCE8"))))
-
 
 # Create a styled table 
 table1<-formatted_table_wide %>%
@@ -730,7 +728,6 @@ In order to assess the change in political opinion compared to economic developm
 data_m_agr2<- election_summary |>
   inner_join(GDP_AGR_percentage, by = c("Município" = "Nome do Município"))
 
-
 ggplot(data = data_m_agr2, aes(x = perc_increase_agri, y = center_perc_points_change, color = `Nome da Grande Região`)) +
   geom_point(size = 1, alpha = 0.5, shape = 17) +  # transparency 
   geom_smooth(method="lm", color = "#00008B", linewidth =0.5) +
@@ -744,7 +741,6 @@ ggplot(data = data_m_agr2, aes(x = perc_increase_agri, y = center_perc_points_ch
             axis.text.x = element_text(size = 8),
         axis.text.y = element_text(size = 8),)+
   labs(x = "Yearly % Increase in Agricultural GDP",y = "% point change of votes to the center" )
-
 
 ```
 
