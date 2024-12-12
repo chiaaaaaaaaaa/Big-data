@@ -229,11 +229,9 @@ Parties_spectrum <- Parties_spectrum|>
                           ifelse(Média<3.150,"left","center")))|>
   select(-Média)
 
-#rename as we need in upper case
 Parties_spectrum[3,1]<-"PSOL"
 
 #scrape second classification
-
 
 Parties_orientation_2<- read_html("https://www.scielo.br/j/dados/a/zzyM3gzHD4P45WWdytXjZWg/?lang=en")
 
@@ -246,7 +244,6 @@ Parties_orientation_2<- Parties_orientation_2|>
 
 #rescale second classification from 1 to 7:
 
-#create a function for rescaling values
 rescale<-function(x){
   rescaled_value<-((x - 1) / (10 - 1)) * (7 - 1) + 1
   return(round(rescaled_value,2))
@@ -287,8 +284,7 @@ Parties_orientation_3<-Parties_orientation_3|>
 
 Parties_orientation_3$orientation[c(1,6,8,10:13,20,21,23,24)]<-c("center","center","right","right","center","center","left","left","center","right","center")
 
-#adjust names
-#remove name of previous party into parentheses
+#adjust names and remove name of previous party into parentheses
 Parties_orientation_3$Partido<-gsub("\\s*\\(.*\\)", "", Parties_orientation_3$Partido)
 Parties_orientation_3$Partido[c(2:5,7,9,14,15,17:19,21,22,24)] <- 
   toupper(Parties_orientation_3$Partido[c(2:5,7,9,14,15,17:19,21,22,24)])
@@ -460,7 +456,6 @@ election_summary <- Data_Elections_1998_2024 |>
     orientation_center = sum(Votos.válidos[orientation == "center"], na.rm = TRUE)) #votes to the center 
     #note: used reframe instead of mutate, as suggested by an error
 
-# Pivot the summarized election data to a wide format
 election_summary <- election_summary |>
   pivot_wider(names_from = `Ano.de.eleição`,
               values_from = c(Votos_válidos, orientation_center),
@@ -697,7 +692,7 @@ right_colors <- ifelse(
   ifelse(formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20, "#F9D5D3",
         "#FFFCE8"))))
 
-# Create a styled table 
+# Create a styled table with gradient color to the left, center, and right columns based on the diff (increase or decrease)
 table1<-formatted_table_wide %>%
   rename( `yearly increase` = perc_increase_agri)%>%
   head(12)%>%
@@ -707,7 +702,6 @@ table1<-formatted_table_wide %>%
     font_size = 10,
     bootstrap_options = c("striped", "hover", "condensed", "responsive")
   ) %>%
-  # Apply gradient color to the left, center, and right columns based on the diff (increase or decrease)
   column_spec(4, background = left_colors) %>%
   column_spec(6, background = center_colors) %>%
   column_spec(8, background = right_colors)
