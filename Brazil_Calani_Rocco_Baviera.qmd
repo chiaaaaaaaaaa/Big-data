@@ -781,7 +781,8 @@ y = center_perc_points_change, color = `Nome da Grande Região`)) +
     axis.title.y = element_text(size = 10),
             axis.text.x = element_text(size = 8),
         axis.text.y = element_text(size = 8),)+
-  labs(x = "Yearly % Increase in Agricultural GDP",y)
+  labs(x = "Yearly % Increase in Agricultural GDP",
+y= "% point change of votes to the center")
 
 ```
 
