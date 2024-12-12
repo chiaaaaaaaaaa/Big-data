@@ -720,12 +720,13 @@ formatted_table_wide$right_diff > 5 & formatted_table_wide$right_diff <= 20,
   ifelse(
 formatted_table_wide$right_diff < -20, "#F08080",
   ifelse(
-formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20,
+formatted_table_wide$right_diff < -5 & formaatted_table_wide$right_diff >= -20,
 "#F9D5D3",
         "#FFFCE8"))))
-ChatGPT ha detto:
-ChatGPT
-Per rendere il codice più leggibile e più compatto, puoi andare a capo in corrispondenza di ciascun blocco logico degli ifelse. Usa un'indentazione chiara per evidenziare la struttura gerarchica delle condizioni. Ecco una versione migliorata:
+
+#ChatGPT ha detto:
+#ChatGPT
+#Per rendere il codice più leggibile e più compatto, puoi andare a capo in corrispondenza di ciascun blocco logico degli ifelse. Usa un'indentazione chiara per evidenziare la struttura gerarchica delle condizioni. Ecco una versione migliorata:
 
 right_colors <- ifelse(
   formatted_table_wide$right_diff > 20, "#90EE90",
@@ -738,7 +739,7 @@ formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20, "
         "#FFFCE8"))))
 
 # Create a styled table with gradient color to the left, center,
-and right columns based on the diff (increase or decrease)
+#and right columns based on the diff (increase or decrease)
 table1<-formatted_table_wide %>%
   rename( `yearly increase` = perc_increase_agri)%>%
   head(12)%>%
@@ -774,15 +775,15 @@ y = center_perc_points_change, color = `Nome da Grande Região`)) +
   geom_smooth(method="lm", color = "#00008B", linewidth =0.5) +
   scale_color_manual( values = Palette, name = "Region") +
   theme_base() +
-    xlim (0,40)+ #we excluude outliers from visualization
+    xlim (0,40)+ #we exclude outliers from visualization
   theme(
         plot.title = element_text(size = 12),
          axis.title.x = element_text(size = 10),
     axis.title.y = element_text(size = 10),
             axis.text.x = element_text(size = 8),
         axis.text.y = element_text(size = 8),)+
-  labs(x = "Yearly % Increase in Agricultural GDP",
-y= "% point change of votes to the center")
+  labs(x = "Yearly % Increase in Agricultural GDP", 
+        y ="% change in votes to the center" )
 
 ```
 
