@@ -290,7 +290,6 @@ Parties_orientation_3$orientation[c(1,6,8,10:13,20,21,23,24)]<-c("center","cente
 #adjust names
 #remove name of previous party into parentheses
 Parties_orientation_3$Partido<-gsub("\\s*\\(.*\\)", "", Parties_orientation_3$Partido)
-#use upper case only when needed
 Parties_orientation_3$Partido[c(2:5,7,9,14,15,17:19,21,22,24)] <- 
   toupper(Parties_orientation_3$Partido[c(2:5,7,9,14,15,17:19,21,22,24)])
 
@@ -384,11 +383,6 @@ GDP_AGR_percentage <- GDP_Agri %>%
   #keep variables of interest
   select(`Nome do Município`,`Nome da Grande Região`,perc_increase_agri)%>%
   arrange(desc(perc_increase_agri)) # Sort by growth in descending order
-
-#head(GDP_AGR_percentage)|>
-  # mutate(perc_increase_agri = (paste0(perc_increase_agri,"%"))) |>
-  #knitr::kable()|>
-  #kableExtra::kable_styling(font_size = 16)
 
 ```
 
