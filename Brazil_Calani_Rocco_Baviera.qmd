@@ -11,7 +11,7 @@ Juan Gustavo Prestes Calani - 1071203 -
 
 Elena Rocco - 1068161 - elena.rocco3\@studio.unibo.it
 
-Chiara Baviera - 1071616 -
+Chiara Baviera - 1071616 - chiara.baviera\@studio.unibo.it
 
 ### Introduction
 
@@ -67,7 +67,7 @@ colnames(GDP_M_complete2)[33]<- "Gross_agriculture_value"
 #select the variables of interest
 GDP_M_complete1<-GDP_M_complete1|>
   select(Ano,`Nome do Município`,`Sigla da Unidade da Federação`,
-`Nome da Grande Região`,Gross_agriculture_value)
+`Nome da Grande Região`, Gross_agriculture_value)
 
 GDP_M_complete2<- GDP_M_complete2|>
   select(Ano,`Nome do Município`,`Sigla da Unidade da Federação`,
@@ -86,7 +86,8 @@ GDP_Agri<- GDP_M_complete1|>
 GDP_Agri<- GDP_Agri |>
   filter( Ano >= 2008)|>
 #the zeros are actually missing data
-   mutate(Gross_agriculture_value = ifelse(Gross_agriculture_value == 0,NA, Gross_agriculture_value)) %>% 
+   mutate(Gross_agriculture_value = ifelse(
+Gross_agriculture_value == 0,NA, Gross_agriculture_value)) %>% 
   mutate(`Nome do Município`= toupper(`Nome do Município`))
 ```
 
@@ -162,7 +163,8 @@ We used electoral data dowloaded in the[Supreme Electoral Court (TSE) archives](
 
 ```{r warning = FALSE}
 
-# Loop to read datasets and insert them into a list. Then concatenate them into one
+# Loop to read datasets and insert them into a list. 
+#Then concatenate them into one
 
 
 start_year <- 1998
@@ -184,9 +186,7 @@ for (year in seq(start_year, end_year, by = year_interval)) {
     datasets[[dataset_name]] <- dataset
     
   } else {
-    message(paste("File for year", year, "does not exist:", file_path))
-  }
-}
+    message(paste("File for year", year, "does not exist:", file_path))}}
 
 # Cleaning the dataset
 Elections_1998_2024 <- do.call(rbind, datasets)
@@ -218,7 +218,8 @@ Finally, we added the information about political orientation to the electoral d
 
 # scrape first classification
 
-Parties_spectrum<- read_html("https://www.scielo.br/j/civitas/a/XPYDSP37JSDdwv3ZrvyZL6h/")
+Parties_spectrum<- read_html(
+"https://www.scielo.br/j/civitas/a/XPYDSP37JSDdwv3ZrvyZL6h/")
 
 tables <-Parties_spectrum|>
   html_elements("table")
@@ -238,7 +239,8 @@ Parties_spectrum[3,1]<-"PSOL"
 
 #scrape second classification
 
-Parties_orientation_2<- read_html("https://www.scielo.br/j/dados/a/zzyM3gzHD4P45WWdytXjZWg/?lang=en")
+Parties_orientation_2<- read_html(
+"https://www.scielo.br/j/dados/a/zzyM3gzHD4P45WWdytXjZWg/?lang=en")
 
 Parties_orientation_2<- Parties_orientation_2|>
   html_element("table")|>
@@ -267,7 +269,8 @@ Parties_orientation_2<-Parties_orientation_2|>
 
 #change spelling to match the electoral dataset, only when needed
 Parties_orientation_2$Partido<-as.character((Parties_orientation_2$Partido))
-Parties_orientation_2$Partido[c(9,13,24,31,32,34)]<-toupper(Parties_orientation_2$Partido[c(9,13,24,31,32,34)])
+Parties_orientation_2$Partido[c(9,13,24,31,32,
+34)]<-toupper(Parties_orientation_2$Partido[c(9,13,24,31,32,34)])
 Parties_orientation_2[5,1]<-"PC do B"
 Parties_orientation_2[21,1]<-"PODE"
 Parties_orientation_2$Partido<-as.factor((Parties_orientation_2$Partido))
@@ -285,12 +288,15 @@ Parties_orientation_3<-Parties_orientation_3|>
   select(-Média)
 
 
-#add others, based on the feedback given by the AI and parties traditionally belonging to the centrão
+#add others, based on the feedback given by the AI and parties
+#traditionally belonging to the centrão
 
-Parties_orientation_3$orientation[c(1,6,8,10:13,20,21,23,24)]<-c("center","center","right","right","center","center","left","left","center","right","center")
+Parties_orientation_3$orientation[c(1,6,8,10:13,20,21,23,
+24)]<-c("center","center","right","right","center","center","left","left","center","right","center")
 
 #adjust names and remove name of previous party into parentheses
-Parties_orientation_3$Partido<-gsub("\\s*\\(.*\\)", "", Parties_orientation_3$Partido)
+Parties_orientation_3$Partido<-gsub("\\s*\\(.*\\)",
+"", Parties_orientation_3$Partido)
 Parties_orientation_3$Partido[c(2:5,7,9,14,15,17:19,21,22,24)] <- 
   toupper(Parties_orientation_3$Partido[c(2:5,7,9,14,15,17:19,21,22,24)])
 
@@ -306,9 +312,9 @@ All_parties_orientation[17,2]<-"center"
 
 #merge the first and last column to get the full classification in one
 All_parties_orientation<-All_parties_orientation|>
-  mutate(orientation = ifelse( !is.na(orientation.x), orientation.x,       #if finds a value in the first keep, otherwise..
-                               ifelse(!is.na(orientation.y),orientation.y, # take the second if there is, otherwise...
-                                             orientation)))|>              #use the third value
+  mutate(orientation = ifelse( !is.na(orientation.x), orientation.x,       
+                               ifelse(!is.na(orientation.y),orientation.y, 
+                                             orientation)))|>              
            select(Partido, orientation)
 
 # create a binary variable for purpose of analysis
@@ -327,7 +333,8 @@ Data_Elections_1998_2024<- Data_Elections_1998_2024|>
 
 ```{r eval = FALSE}
 
-Data_Elections_1998_2024<-read.csv("Data_Elections_1998_2024", fileEncoding = "UTF-8")
+Data_Elections_1998_2024<-read.csv("Data_Elections_1998_2024",
+fileEncoding = "UTF-8")
 
 Data_Elections_1998_2024<- Data_Elections_1998_2024|>
   filter(Ano.de.eleição >= 2008)|>
@@ -360,7 +367,8 @@ GDP_AGR_percentage <- GDP_Agri %>%
   mutate(Gross_agriculture_value = ifelse(Gross_agriculture_value == 0,
                                           NA, Gross_agriculture_value)) %>%
   
-  group_by(`Nome do Município`, `Sigla da Unidade da Federação`, `Nome da Grande Região`) %>% #keep region and state
+  group_by(`Nome do Município`, `Sigla da Unidade da Federação`,
+`Nome da Grande Região`) %>% #keep region and state
   filter(!is.na(Gross_agriculture_value)) %>% # Remove rows with missing data
   
   #define start and end points 
@@ -369,14 +377,18 @@ GDP_AGR_percentage <- GDP_Agri %>%
     value_2008 = sum(Gross_agriculture_value[Ano == 2008], na.rm = TRUE),
     value_2021 = sum(Gross_agriculture_value[Ano == 2021], na.rm = TRUE)) %>%
   
-  #filter out the few observations starting later than 2008, not to introduce biases
+  #filter out the few observations starting later than 2008, 
+#not to introduce biases
   filter(first_year <= 2008) %>% 
   
   #filter out NA and 0 values to avoid computation errors and biases
-  filter(!is.na(value_2008) & !is.na(value_2021) & value_2008!= 0 & value_2021 != 0) %>% 
+  filter(!is.na(
+value_2008) & !is.na(
+value_2021) & value_2008!= 0 & value_2021 != 0) %>% 
   
   # Yearly avg percentage increase (CAGR)
-  mutate(perc_increase_agri = round((((value_2021 /value_2008)^(1/12))-1) * 100, 2)) %>%
+  mutate(perc_increase_agri = round(
+(((value_2021 /value_2008)^(1/12))-1) * 100, 2)) %>%
   
   #keep variables of interest
   select(`Nome do Município`,`Nome da Grande Região`,perc_increase_agri)%>%
@@ -393,7 +405,8 @@ data<-GDP_AGR_percentage|>
   
 ggplot (data = data , aes (x = reorder(`Nome da Grande Região`, Average),
 y = Average, color = `Nome da Grande Região`))+
-    geom_bar(stat = "identity", fill = Palette,  color = "black", width = 0.5)+
+    geom_bar(stat = "identity", fill = Palette,  color = "black",
+width = 0.5)+
     coord_flip() +
     scale_y_continuous(labels = label_percent(scale = 1))+
     labs( title = "Average CARG by region",
@@ -411,7 +424,8 @@ data<-GDP_AGR_percentage|>
   summarize(Average = mean(perc_increase_agri, na.rm = T))|>
   arrange(desc(Average))
   
-ggplot (data = data , aes (x = reorder(`Sigla da Unidade da Federação`, Average),
+ggplot (data = data , aes (x = reorder(`Sigla da Unidade da Federação`,
+Average),
 y = Average, fill = `Nome da Grande Região`))+
     geom_bar(stat = "identity")+
     coord_flip() +
@@ -443,7 +457,8 @@ here is how we created the variable perc_center
 #join the electoral dataset 
 data_m_agr <- Data_Elections_1998_2024|>
   group_by(Município, Ano.de.eleição)|>
-  summarize( perc_center = round((sum(Votos.válidos[center== 1]/sum(Votos.válidos)))*100,2))
+  summarize( perc_center = round(
+(sum(Votos.válidos[center== 1]/sum(Votos.válidos)))*100,2))
 
 ```
 
@@ -456,8 +471,10 @@ Variable center_perc_points_change:
 election_summary <- Data_Elections_1998_2024 |>
   filter(`Ano.de.eleição` %in% c(2008, 2020)) |> #choose the years of interest 
   group_by(Município,UF,`Ano.de.eleição`) |>
-  reframe(Votos_válidos = sum(Votos.válidos, na.rm = TRUE), #calculate tot votes by municipality
-    orientation_center = sum(Votos.válidos[orientation == "center"], na.rm = TRUE)) #votes to the center 
+  reframe(Votos_válidos = sum(Votos.válidos, na.rm = TRUE), 
+#calculate tot votes by municipality
+    orientation_center = sum(Votos.válidos[orientation == "center"],
+na.rm = TRUE)) #votes to the center 
     #note: used reframe instead of mutate, as suggested by an error
 
 election_summary <- election_summary |>
@@ -467,7 +484,8 @@ election_summary <- election_summary |>
 
 election_summary <- election_summary |>
   mutate( # Calculate the percentage change in vote share for "center" from 2008 to 2022
-    center_perc_points_change = round(((orientation_center_Year_2020 / Votos_válidos_Year_2020) * 100 -
+    center_perc_points_change = round(
+((orientation_center_Year_2020 / Votos_válidos_Year_2020) * 100 -
                                         (orientation_center_Year_2008 /Votos_válidos_Year_2008) * 100),2 ))
 
 ```
@@ -476,9 +494,11 @@ election_summary <- election_summary |>
 data<-election_summary|>
   group_by(UF)|>
   summarize( n_municipalities = n(),
-    "Percentage change of votes to the center" = sum(center_perc_points_change, na.rm = TRUE)/n_municipalities)
+    "Percentage change of votes to the center" = sum(
+center_perc_points_change, na.rm = TRUE)/n_municipalities)
 
-ggplot (data = data , aes (x = reorder(UF, `Percentage change of votes to the center`), 
+ggplot (data = data , aes (x = reorder(UF,
+`Percentage change of votes to the center`), 
 y = `Percentage change of votes to the center`, fill = UF))+
     geom_bar(stat = "identity")+
     coord_flip() +
@@ -504,9 +524,12 @@ data_orientation<-Data_Elections_1998_2024|>
   filter(Ano.de.eleição %in% c(2008,2020))|>
   select(Ano.de.eleição,Município, UF , orientation, Votos.válidos)|>
   group_by(Município, UF , Ano.de.eleição)|>
-  summarize( "left"= round((sum(Votos.válidos[orientation =="left"])/sum(Votos.válidos))*100,2), 
-             "center" = round((sum(Votos.válidos[orientation == "center"])/sum(Votos.válidos))*100,2),
-             "right" = round((sum(Votos.válidos[orientation == "right"])/sum(Votos.válidos))*100,2))
+  summarize( "left"= round(
+(sum(Votos.válidos[orientation =="left"])/sum(Votos.válidos))*100,2), 
+             "center" = round(
+(sum(Votos.válidos[orientation == "center"])/sum(Votos.válidos))*100,2),
+             "right" = round(
+(sum(Votos.válidos[orientation == "right"])/sum(Votos.válidos))*100,2))
 
 data_orientation_filtered <- data_orientation |>
   filter(Ano.de.eleição %in% c(2008, 2020))|>
@@ -517,10 +540,12 @@ data_orientation_filtered <- data_orientation |>
 data_orientation_calculated <- data_orientation_filtered |>
   group_by(Município, UF) |>
   summarize(index_2008 = sum(case_when(
-             Ano.de.eleição == 2008 ~ (right/100) * 1 + (center/100) * 0 + (left/100) * -1,
+             Ano.de.eleição == 2008 ~ (
+right/100) * 1 + (center/100) * 0 + (left/100) * -1,
              TRUE ~ 0 )),
             index_2020 = sum(case_when(
-            Ano.de.eleição == 2020 ~ (right/100) * 1 + (center/100) * 0 + (left/100)  * -1,
+            Ano.de.eleição == 2020 ~ (
+right/100) * 1 + (center/100) * 0 + (left/100)  * -1,
             TRUE ~ 0 )),
             .groups = "drop") |>
   mutate(orientation_change = round((index_2020 - index_2008),2))
@@ -532,7 +557,8 @@ data_orientation_calculated <- data_orientation_filtered |>
 data<-data_orientation_calculated|>
   group_by(UF)|>
   summarize( n_municipalities = n(),
-    "Average change in orientation index" = sum(orientation_change, na.rm = TRUE)/n_municipalities)
+    "Average change in orientation index" = sum(
+orientation_change, na.rm = TRUE)/n_municipalities)
 
 
 ggplot (data = data , aes (x = reorder(UF,
@@ -724,18 +750,16 @@ formatted_table_wide$right_diff < -5 & formaatted_table_wide$right_diff >= -20,
 "#F9D5D3",
         "#FFFCE8"))))
 
-#ChatGPT ha detto:
-#ChatGPT
-#Per rendere il codice più leggibile e più compatto, puoi andare a capo in corrispondenza di ciascun blocco logico degli ifelse. Usa un'indentazione chiara per evidenziare la struttura gerarchica delle condizioni. Ecco una versione migliorata:
-
 right_colors <- ifelse(
   formatted_table_wide$right_diff > 20, "#90EE90",
 ifelse(
-formatted_table_wide$right_diff > 5 & formatted_table_wide$right_diff <= 20, "#D9F2D1",
+formatted_table_wide$right_diff > 5 & formatted_table_wide$right_diff <= 20,
+"#D9F2D1",
 ifelse(
 formatted_table_wide$right_diff < -20, "#F08080",
 ifelse(
-formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20, "#F9D5D3",
+formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20,
+"#F9D5D3",
         "#FFFCE8"))))
 
 # Create a styled table with gradient color to the left, center,
@@ -806,14 +830,18 @@ However, no change in support to the center does not mean there was no change in
 
 #join with dataset on orientation index
 data_or_agr<- GDP_AGR_percentage|>
-  inner_join(data_orientation_calculated, by = c("Nome do Município" = "Município"))|>
+  inner_join(data_orientation_calculated, by = c(
+"Nome do Município" = "Município"))|>
   mutate(perc_increase_agri = round(perc_increase_agri,2))
 
-ggplot(data = data_or_agr, aes(y = orientation_change, x = perc_increase_agri, color = orientation_change)) +
+ggplot(data = data_or_agr, aes(
+y = orientation_change, x = perc_increase_agri, color = orientation_change)) +
   geom_point(size = 1.5, alpha = 0.7) +
   geom_smooth(method = "lm", color = "#FF0000", linewidth = 0.5) +
-  scale_color_gradient2(low = "#FF0000", mid = "#FFEC8B", high = "#0000FF", midpoint = 0) +
-  geom_hline(yintercept = 0, linetype = "solid", color = "#000000", size = 0.3) +
+  scale_color_gradient2(low = "#FF0000", 
+mid = "#FFEC8B", high = "#0000FF", midpoint = 0) +
+  geom_hline(yintercept = 0, linetype = "solid", color = "#000000",
+size = 0.3) +
   xlab("Yearly Agricultural GDP Growth")+
   theme_bw() +
   labs(title = "Yearly Agricultural Growth")+
