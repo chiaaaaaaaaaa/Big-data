@@ -105,13 +105,14 @@ Here we provide some summary statitsics about GDP over time
 
 ```{r}
 
-GDP_Agri|>
+table<-GDP_Agri|>
   filter(Ano %in% c(2008,2021))|>
   group_by(Ano)|>
   summarize( maximum = max(Gross_agriculture_value, na.rm = T),
              minimum = min(Gross_agriculture_value, na.rm = T),
              Average = mean(Gross_agriculture_value, na.rm = T),
              Median  = median(Gross_agriculture_value, na.rm = T))
+kable(table)
 ```
 
 Agricultural GDP increased almost 5-fold during the period, maintaining quite a difference between the average and the median, possibly indicating more outliers having an outstanding growht rate than mediocre ones.
@@ -147,12 +148,13 @@ group = `Sigla da Unidade da Federação`, #represent trend by state
 color = `Nome da Grande Região`)) + #color by region
   geom_line(linewidth= 0.5) +
   theme_minimal() +
+  labs(title ="State agricultural GDP over time")+
   ylab("State Agricultural GDP (bln R$)")+
    xlab("Year")+
   scale_color_manual(name = "Region", values = Palette) +
   scale_y_continuous(labels = label_comma(scale = 1)) + 
-theme(legend.position = "bottom") 
-
+theme(legend.position = "bottom",
+      plot.title = element_text(size = 14, face = "bold")) 
 ```
 
 It looks like 2019 was a turning point for spurring agricultural growth in several states.
@@ -162,15 +164,12 @@ It looks like 2019 was a turning point for spurring agricultural growth in sever
 We used electoral data dowloaded in the[Supreme Electoral Court (TSE) archives](https://sig.tse.jus.br/ords/dwapr/r/seai/sig-eleicao-arquivo/conjuntos-de-dados?p10_cd_modulo=resultado&session=118004809136717&cs=1iWGX_4kCm1I9RFT7LM3g8OGvjyuhSs0dfNeA6vcgSvnZ5DWoq10rybAKreqCloli3ZA2UxYgg9qMOPODXrRUuA),reporting electoral data from 1998 to 2024. We chose to use the data coming from the section ["Votação candidato"](https://sig.tse.jus.br/ords/dwapr/r/seai/sig-eleicao-arquivo/passo-1?p20_sq_conjunto_dados=15&session=118004809136717&cs=16qyseB2rOIuaxHc8XPeS3xoeL1y26F7Srv6mSThnuasVCHOPxKLkEyIvbSqkvRUz4mubhTQWMiDimKFMFopx_Q) (Candidate ballot). First, we chose only Deputies (Deputado) and Vereadores elections, which alternate every two years. Then we filtered for the variables of interest to addition to the candidate (Nome.candidato) and date of election, that we report below. We followed this procedure to download the dataset for each year. Then, we used a for loop to read the datasets, name them, and insert them into a list, to then bind them in a single long dataset (Elections_1998_2024).
 
 ```{r warning = FALSE}
-
 # Loop to read datasets and insert them into a list. 
 #Then concatenate them into one
-
 
 start_year <- 1998
 end_year <- 2024
 year_interval <- 2
-
 
 datasets <- list()
 
@@ -178,13 +177,9 @@ for (year in seq(start_year, end_year, by = year_interval)) {
   file_path <- paste0("votacao_candidato", year, ".csv")
   dataset_name <- paste0("Elections_", year)
   if (file.exists(file_path)) {
-    
     dataset <- read.csv(file_path, fileEncoding = "latin1", sep = ";")
-    
     assign(dataset_name, dataset)
-    
-    datasets[[dataset_name]] <- dataset
-    
+    datasets[[dataset_name]] <- dataset 
   } else {
     message(paste("File for year", year, "does not exist:", file_path))}}
 
@@ -214,8 +209,7 @@ Defining the political spectrum of Brazilian parties is inherently difficult and
 
 Finally, we added the information about political orientation to the electoral dataset.
 
-```{r warning = FALSE}
-
+```{r warning = FALSE, message = FALSE}
 # scrape first classification
 
 Parties_spectrum<- read_html(
@@ -396,7 +390,7 @@ value_2021) & value_2008!= 0 & value_2021 != 0) %>%
 
 ```
 
-```{r}
+```{r message = FALSE}
 
 data<-GDP_AGR_percentage|>
   group_by(`Nome da Grande Região`)|>
@@ -405,27 +399,25 @@ data<-GDP_AGR_percentage|>
   
 ggplot (data = data , aes (x = reorder(`Nome da Grande Região`, Average),
 y = Average, color = `Nome da Grande Região`))+
-    geom_bar(stat = "identity", fill = Palette,  color = "black",
-width = 0.5)+
+    geom_bar(stat = "identity", fill = Palette,  color = "black", width = 0.5)+
     coord_flip() +
     scale_y_continuous(labels = label_percent(scale = 1))+
     labs( title = "Average CARG by region",
           x = "Region",
           y = "Average CAGR from 2008 to 2020"
     ) +
-    theme_minimal()
+    theme_minimal()+
+  theme(plot.title = element_text(size = 14, face = "bold"))
   
 ```
 
-```{r}
-
+```{r warning = FALSE, message = FALSE}
 data<-GDP_AGR_percentage|>
   group_by(`Sigla da Unidade da Federação`, `Nome da Grande Região`)|>
   summarize(Average = mean(perc_increase_agri, na.rm = T))|>
   arrange(desc(Average))
   
-ggplot (data = data , aes (x = reorder(`Sigla da Unidade da Federação`,
-Average),
+ggplot (data = data , aes (x = reorder(`Sigla da Unidade da Federação`, Average),
 y = Average, fill = `Nome da Grande Região`))+
     geom_bar(stat = "identity")+
     coord_flip() +
@@ -436,8 +428,8 @@ y = Average, fill = `Nome da Grande Região`))+
           y = "Average CAGR from 2008 to 2020") +
     theme_minimal()+
     theme(
-    axis.text.y = element_text(size = 6))
-
+    axis.text.y = element_text(size = 6),
+    plot.title = element_text(size = 14, face = "bold"))
 ```
 
 The breakdown by region of the CAGR indicates that Center-west and North region envisaged the highest consistent increases, as we expected, as northern regions are typically rural compared to southern ones.
@@ -453,7 +445,6 @@ $\large Orientation \;\;index =\Large\frac{votes_{right}\;(1)\; + \; votes_{cent
 here is how we created the variable perc_center
 
 ```{r warning = FALSE}
-
 #join the electoral dataset 
 data_m_agr <- Data_Elections_1998_2024|>
   group_by(Município, Ano.de.eleição)|>
@@ -497,22 +488,21 @@ data<-election_summary|>
     "Percentage change of votes to the center" = sum(
 center_perc_points_change, na.rm = TRUE)/n_municipalities)
 
-ggplot (data = data , aes (x = reorder(UF,
-`Percentage change of votes to the center`), 
-y = `Percentage change of votes to the center`, fill = UF))+
+ggplot (data = data , aes (x = reorder(UF, `Percentage change of votes to the center`), 
+y = `Percentage change of votes to the center`, fill = `Percentage change of votes to the center` ))+
     geom_bar(stat = "identity")+
+  scale_fill_gradient2(low = "#ff0000",  mid = "#ffff00", high = "#008000" ) +
     coord_flip() +
-    scale_y_continuous(labels = label_percent(scale = 1))+
-  scale_fill_viridis_d(option = "D")+
+    scale_y_continuous(labels = label_percent(scale = 1)) +
     labs( title = "Average percentage change in votes to the center by state",
           x = "State",
           y = "Average percentage change from 2008 to 2020") +
-    theme_minimal()+
-    theme(
-    axis.text.y = element_text(size = 6))
-
+  theme_minimal()+
+    theme( 
+    axis.text.y = element_text(size = 6),
+    plot.title = element_text(size = 14, face = "bold"),
+    legend.position = "none")
 ```
-
 Overall, the decrease in votes to the center was prominent compared to the increase.
 
 Orientation index:
@@ -561,20 +551,19 @@ data<-data_orientation_calculated|>
 orientation_change, na.rm = TRUE)/n_municipalities)
 
 
-ggplot (data = data , aes (x = reorder(UF,
-`Average change in orientation index`), 
-y =  `Average change in orientation index`, fill = UF))+
-    geom_bar(stat = "identity")+
-    coord_flip() +
-    scale_y_continuous(labels = label_percent(scale = 1))+
-  scale_fill_viridis_d(option = "D")+
-    labs( title = "Average change in orientation index by state",
-          x = "State",
-          y = "Average change in orientation index from 2008 to 2020") +
-    theme_minimal()+
-    theme(
-    axis.text.y = element_text(size = 6))
-
+ggplot(data = data, aes(x = reorder(UF, `Average change in orientation index`), 
+y = `Average change in orientation index`, fill =  `Average change in orientation index`)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_y_continuous(labels = label_percent(scale = 1)) +
+  scale_fill_gradient(low ="#90EE90", high= "#0073A2") +
+  labs(title = "Average change in orientation index by state",
+       x = "State",
+       y = "Average change in orientation index from 2008 to 2020") +
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 6),
+        legend.position = "none",
+        plot.title = element_text(size = 14, face = "bold"))
 
 ```
 
@@ -585,7 +574,7 @@ Here are the new variables created\>
 | variable                  | type                  | description                                                                            |
 |-----------------|-----------------|---------------------------------------|
 | perc_increase_agri        | numerical, continuous | Yearly increase (CAGR) in agriculture GDP from 2008 to 2020 (in percentage points)     |
-| center_perc_points_change | numerical, continuous | change (in percentage points) in the proportion of the population voting to the center |
+| center_perc_points\\_change | numerical, continuous | change (in percentage points) in the proportion of the population voting to the center |
 | left                      | numerical, continuous | proportion of people voting for the left (in percentage points)                        |
 | center                    | numerical, continuous | proportion of people voting for the center (in percentage points)                      |
 | right                     | numerical, continuous | proportion of people voting for the right (in percentage points)                       |
@@ -713,7 +702,8 @@ formatted_table_wide <- municipality_orientation_agr %>%
 formatted_table_wide <- formatted_table_wide %>%
   mutate( left_diff = `left_2020` - `left_2008`,
            center_diff = `center_2020` - `center_2008`,
-           right_diff = `right_2020` - `right_2008`)
+           right_diff = `right_2020` - `right_2008`)|>
+  select(- `Sigla da Unidade da Federação`)
 
 left_colors <- ifelse(
   formatted_table_wide$left_diff > 20, "#90EE90",  # Strong green for >20%
@@ -770,7 +760,7 @@ table1<-formatted_table_wide %>%
   select(-left_diff, -center_diff, -right_diff) %>%  
   kable() %>%
   kable_styling(
-    font_size = 10,
+    font_size = 8,
     bootstrap_options = c("striped", "hover", "condensed", "responsive")
   ) %>%
   column_spec(4, background = left_colors) %>%
@@ -780,7 +770,6 @@ table1<-formatted_table_wide %>%
 table1
 
 ```
-
 Overall, in most of the municipalities support to the left decreased. However, the pattern regarding vote to the center is not so clear.
 
 #### Municipality-level analysis
@@ -815,11 +804,12 @@ y = center_perc_points_change, color = `Nome da Grande Região`)) +
 
 mod1 <- lm(center_perc_points_change ~ perc_increase_agri, data = data_m_agr2)
 
-tidy(mod1)%>%
+mod1<-tidy(mod1)%>%
   mutate(across(where(is.numeric), ~ round(.,3))) |>
   bind_rows(tibble(term = "R-squared", estimate = glance(mod1)$r.squared) %>%
   mutate(across(where(is.numeric), ~ round(., 3))))
 
+kable(mod1)
 ```
 
 The regression suggests that municipalities having a higher GDP growth have a slightly higher tendency to have increased their votes to the center. However, the relationship is almost null and not statistically significant.
@@ -850,15 +840,15 @@ size = 0.3) +
 ```
 
 ```{r warning = FALSE}
-
 mod2 <- lm(orientation_change ~ perc_increase_agri, data = data_or_agr)
 
-tidy(mod2)%>%
+mod2<-tidy(mod2)%>%
  mutate(across(where(is.numeric), ~ round(.,3))) |>
  bind_rows(tibble(term = "R-squared",
 estimate = glance(mod2)$r.squared) %>%
  mutate(across(where(is.numeric), ~ round(., 3))))
 
+kable(mod2)
 ```
 
 The relationship, again, is not statitsically significant, that is we cannot infer certainly whether higher GDP growth is related to a specific shift in political opinion. However we notice an interesting pattern that had already emerged in the initial descriptive statistics: Overall, there is a tendency to vote more to the right, be it more or less starkly depending on the GDP increase.
