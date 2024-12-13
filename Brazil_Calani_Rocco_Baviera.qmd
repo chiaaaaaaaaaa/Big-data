@@ -1,3 +1,4 @@
+
 ---
 title: "Exploring the relationship of agricultural development and electoral outcomes in Brazil"
 author: "Juan Gustavo Prestes Calani, Elena Rocco, Chiara Baviera"
@@ -476,8 +477,8 @@ election_summary <- election_summary |>
 election_summary <- election_summary |>
   mutate( # Calculate the percentage change in vote share for "center" from 2008 to 2022
     center_perc_points_change = round(
-((orientation_center_Year_2020 / Votos_válidos_Year_2020) * 100 -
-                                        (orientation_center_Year_2008 /Votos_válidos_Year_2008) * 100),2 ))
+((orientation_center_Year_2020 / Votos_válidos_Year_2020) * 100 - 
+(orientation_center_Year_2008 /Votos_válidos_Year_2008) * 100),2 ))
 
 ```
 
@@ -489,7 +490,8 @@ data<-election_summary|>
 center_perc_points_change, na.rm = TRUE)/n_municipalities)
 
 ggplot (data = data , aes (x = reorder(UF, `Percentage change of votes to the center`), 
-y = `Percentage change of votes to the center`, fill = `Percentage change of votes to the center` ))+
+y = `Percentage change of votes to the center`, 
+fill = `Percentage change of votes to the center` ))+
     geom_bar(stat = "identity")+
   scale_fill_gradient2(low = "#ff0000",  mid = "#ffff00", high = "#008000" ) +
     coord_flip() +
@@ -552,7 +554,8 @@ orientation_change, na.rm = TRUE)/n_municipalities)
 
 
 ggplot(data = data, aes(x = reorder(UF, `Average change in orientation index`), 
-y = `Average change in orientation index`, fill =  `Average change in orientation index`)) +
+y = `Average change in orientation index`,
+fill =  `Average change in orientation index`)) +
   geom_bar(stat = "identity") +
   coord_flip() +
   scale_y_continuous(labels = label_percent(scale = 1)) +
@@ -574,7 +577,8 @@ Here are the new variables created\>
 | variable                  | type                  | description                                                                            |
 |-----------------|-----------------|---------------------------------------|
 | perc_increase_agri        | numerical, continuous | Yearly increase (CAGR) in agriculture GDP from 2008 to 2020 (in percentage points)     |
-| center_perc_points\\_change | numerical, continuous | change (in percentage points) in the proportion of the population voting to the center |
+| center_perc_points
+  _change | numerical, continuous | change (in percentage points) in the proportion of the population voting to the center |
 | left                      | numerical, continuous | proportion of people voting for the left (in percentage points)                        |
 | center                    | numerical, continuous | proportion of people voting for the center (in percentage points)                      |
 | right                     | numerical, continuous | proportion of people voting for the right (in percentage points)                       |
@@ -736,7 +740,7 @@ formatted_table_wide$right_diff > 5 & formatted_table_wide$right_diff <= 20,
   ifelse(
 formatted_table_wide$right_diff < -20, "#F08080",
   ifelse(
-formatted_table_wide$right_diff < -5 & formaatted_table_wide$right_diff >= -20,
+formatted_table_wide$right_diff < -5 & formatted_table_wide$right_diff >= -20,
 "#F9D5D3",
         "#FFFCE8"))))
 
